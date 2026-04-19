@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080b12;--panel:#0d1117;--card:#111722;--border:#1d2535;--border2:#263040;--red:#ff4d6d;--red-dim:rgba(255,77,109,0.12);--cyan:#00e5ff;--cyan-dim:rgba(0,229,255,0.1);--gold:#ffd166;--gold-dim:rgba(255,209,102,0.1);--green:#06d6a0;--green-dim:rgba(6,214,160,0.1);--purple:#a78bfa;--text:#e2e8f4;--muted:#4a5568;--muted2:#718096;--radius:10px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(255,77,109,0.06) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(0,229,255,0.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.shell{display:flex;min-height:100vh;position:relative;z-index:1;}
+.sidebar{width:220px;min-width:220px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:sticky;top:0;height:100vh;}
+.logo{padding:0 20px 28px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.logo-mark{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logo-text{font-size:17px;font-weight:700;} .logo-text span{color:var(--red);}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;cursor:pointer;color:var(--muted2);font-size:14px;font-weight:500;border-left:3px solid transparent;transition:all 0.18s;user-select:none;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+.nav-item.active{color:var(--text);border-left-color:var(--red);background:rgba(255,77,109,0.06);}
+.nav-badge{background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:10px;margin-left:auto;}
+.nav-section{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);padding:16px 20px 6px;text-transform:uppercase;}
+.main{flex:1;overflow-y:auto;}
+.page{display:none;padding:36px 40px;max-width:980px;}
+.page.active{display:block;}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;}
+.page-title{font-size:26px;font-weight:800;letter-spacing:-0.5px;} .page-title span{color:var(--red);}
+.page-sub{color:var(--muted2);font-size:14px;margin-top:3px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+.card-title{font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:16px;}
+#dropzone{border:2px dashed var(--border2);border-radius:var(--radius);padding:48px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.01);position:relative;}
+#dropzone.drag{border-color:var(--red);background:var(--red-dim);}
+#dropzone.has-file{border-color:var(--green);background:var(--green-dim);border-style:solid;}
+#dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.drop-icon{font-size:40px;margin-bottom:12px;} .drop-title{font-size:16px;font-weight:600;} .drop-sub{color:var(--muted2);font-size:13px;margin-top:6px;} .file-info{font-size:13px;color:var(--green);font-weight:600;margin-top:8px;}
+.modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.mode-btn{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:16px 12px;cursor:pointer;text-align:center;transition:all 0.2s;user-select:none;}
+.mode-btn:hover{border-color:var(--border2);} .mode-btn.selected{border-color:var(--red);background:var(--red-dim);}
+.mode-icon{font-size:26px;margin-bottom:6px;} .mode-name{font-size:14px;font-weight:700;} .mode-desc{font-size:12px;color:var(--muted2);margin-top:3px;line-height:1.4;}
+.sch-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.sch-tab{padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;border:1px solid var(--border2);cursor:pointer;color:var(--muted2);transition:all 0.15s;user-select:none;}
+.sch-tab:hover{color:var(--text);} .sch-tab.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.best-slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.slot-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px;}
+.slot-card:hover{border-color:var(--gold);} .slot-card.sel{border-color:var(--gold);background:var(--gold-dim);}
+.slot-score{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:var(--card);color:var(--gold);flex-shrink:0;}
+.slot-score.hi{color:var(--green);}
+.form-group{margin-bottom:16px;}
+label{display:block;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;}
+input[type=text],input[type=datetime-local],textarea,select,input[type=password]{width:100%;background:var(--panel);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;transition:border-color 0.15s;outline:none;}
+input:focus,textarea:focus{border-color:var(--red);} textarea{resize:vertical;min-height:80px;}
+input[type=password]{font-family:'JetBrains Mono',monospace;font-size:13px;}
+.priv-group{display:flex;gap:8px;}
+.priv-btn{flex:1;padding:9px;border-radius:7px;font-size:13px;font-weight:600;border:1px solid var(--border2);cursor:pointer;text-align:center;color:var(--muted2);transition:all 0.15s;}
+.priv-btn:hover{color:var(--text);} .priv-btn.active{background:var(--cyan-dim);border-color:var(--cyan);color:var(--cyan);}
+.btn{padding:12px 24px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;font-family:'Outfit',sans-serif;}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 4px 20px rgba(255,77,109,0.3);}
+.btn-red:hover{background:#ff6b85;transform:translateY(-1px);} .btn-red:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.btn-ghost{background:transparent;color:var(--muted2);border:1px solid var(--border2);}
+.btn-ghost:hover{color:var(--text);} .btn-full{width:100%;justify-content:center;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.stat-val{font-size:28px;font-weight:800;} .stat-key{font-size:12px;color:var(--muted2);margin-top:2px;}
+.job-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px;}
+.job-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.job-name{font-size:15px;font-weight:700;} .job-meta{font-size:12px;color:var(--muted2);margin-top:2px;}
+.badge{font-size:11px;font-weight:700;letter-spacing:0.5px;padding:4px 10px;border-radius:20px;text-transform:uppercase;}
+.b-queued{background:var(--gold-dim);color:var(--gold);} .b-scheduled{background:var(--cyan-dim);color:var(--cyan);}
+.b-running{background:var(--red-dim);color:var(--red);} .b-review{background:rgba(167,139,250,0.15);color:var(--purple);}
+.b-uploading{background:var(--cyan-dim);color:var(--cyan);} .b-done{background:var(--green-dim);color:var(--green);}
+.b-error{background:rgba(255,100,100,0.1);color:#ff6666;}
+.prog-bar{height:4px;background:var(--border);border-radius:2px;margin:10px 0;overflow:hidden;}
+.prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--red),#ff8fa3);transition:width 0.5s ease;}
+.job-log{max-height:90px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);line-height:1.7;background:var(--panel);border-radius:6px;padding:8px 10px;margin-top:8px;}
+.log-t{color:var(--muted);margin-right:8px;}
+.review-box{margin-top:14px;padding:16px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);border-radius:10px;}
+.review-hdr{font-size:13px;font-weight:700;color:var(--purple);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.review-hdr span{font-size:11px;color:var(--muted2);font-weight:400;}
+.candidates{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.cand{background:var(--card);border:2px solid var(--green);border-radius:10px;padding:14px 12px;cursor:pointer;transition:all 0.2s;position:relative;}
+.cand.off{border-color:var(--border2);opacity:0.45;}
+.cand:hover{transform:translateY(-2px);}
+.cand-chk{position:absolute;top:10px;right:10px;font-size:17px;}
+.cand-score{font-size:26px;font-weight:800;line-height:1;}
+.cand-pred{font-size:11px;font-weight:700;letter-spacing:0.5px;margin:4px 0 8px;}
+.p-fire{color:var(--green);} .p-high{color:var(--gold);} .p-mid{color:var(--cyan);} .p-low{color:var(--muted2);}
+.cand-ttl{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:5px;}
+.cand-why{font-size:11px;color:var(--muted2);line-height:1.5;}
+.cand-time{font-size:10px;color:var(--muted);margin-top:6px;font-family:'JetBrains Mono',monospace;}
+.upload-btn{width:100%;padding:12px;background:var(--green);color:#000;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.2s;font-family:'Outfit',sans-serif;}
+.upload-btn:hover{background:#08f0b8;transform:translateY(-1px);} .upload-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.done-clips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.done-clip{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;}
+.api-grp{position:relative;margin-bottom:14px;}
+.api-grp label{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.apib{font-size:10px;padding:2px 7px;border-radius:3px;font-family:'JetBrains Mono',monospace;}
+.apib-req{background:rgba(255,77,109,0.15);color:var(--red);} .apib-opt{background:rgba(74,85,104,0.3);color:var(--muted2);}
+.eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted2);font-size:16px;padding:4px;margin-top:14px;}
+.save-ok{font-size:13px;color:var(--green);display:none;align-items:center;gap:6px;}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:14px 20px;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,0.5);transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(.175,.885,.32,1.275);z-index:1000;max-width:360px;}
+#toast.show{transform:translateY(0);opacity:1;} #toast.s{border-left:3px solid var(--green);} #toast.e{border-left:3px solid var(--red);} #toast.i{border-left:3px solid var(--cyan);}
+.hidden{display:none!important;}
+::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="logo"><div class="logo-mark"><div class="logo-icon">&#9654;</div><div class="logo-text">YT <span>Agent</span></div></div></div>
+  <span class="nav-section">Menu</span>
+  <div class="nav-item active" data-page="upload"><span>&#11014;&#65039;</span> Upload</div>
+  <div class="nav-item" data-page="jobs"><span>&#128203;</span> Antrian <span class="nav-badge hidden" id="nb">0</span></div>
+  <span class="nav-section">Tools</span>
+  <div class="nav-item" data-page="editor"><span>&#9986;&#65039;</span> Video Editor</div>
+  <div class="nav-item" data-page="aigen"><span>&#127775;</span> AI Generator</div>
+  <span class="nav-section">Sistem</span>
+  <div class="nav-item" data-page="settings"><span>&#128273;</span> API Keys</div>
+</aside>
+<main class="main">
+
+<!-- UPLOAD -->
+<div class="page active" id="page-upload">
+  <div class="topbar"><div><div class="page-title">Upload <span>Video</span></div><div class="page-sub">Pilih video, mode, jadwal lalu AI yang bekerja</div></div></div>
+  <div class="card"><div class="card-title">&#128193; Pilih Video</div>
+    <div id="dropzone"><input type="file" id="fi" accept="video/*">
+      <div class="drop-icon">&#127916;</div><div class="drop-title">Drag & Drop video ke sini</div>
+      <div class="drop-sub">atau klik untuk memilih file</div>
+      <div class="file-info hidden" id="finfo"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <input type="text" id="ytUrl" placeholder="Atau paste URL YouTube: https://www.youtube.com/watch?v=..." />
+      <button class="btn btn-ghost" id="btnYtFetch" style="padding:10px 14px;">Ambil URL</button>
+    </div>
+    <div id="ytProgWrap" style="display:none;margin-top:10px;">
+      <div class="prog-bar"><div class="prog-fill" id="ytProgFill" style="width:0%;"></div></div>
+      <div id="ytProgMsg" style="font-size:12px;color:var(--muted2);"></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">&#127919; Mode Upload</div>
+    <div class="modes">
+      <div class="mode-btn" data-mode="auto"><div class="mode-icon">&#129302;</div><div class="mode-name">Auto</div><div class="mode-desc">AI tentukan Film atau Clip</div></div>
+      <div class="mode-btn selected" data-mode="clip"><div class="mode-icon">&#9986;&#65039;</div><div class="mode-name">Clip</div><div class="mode-desc">Potong momen viral &#8594; Shorts</div></div>
+      <div class="mode-btn" data-mode="film"><div class="mode-icon">&#127916;</div><div class="mode-name">Film</div><div class="mode-desc">Upload video utuh langsung</div></div>
+    </div>
+  </div>
+  <div class="card" id="recCard" style="display:none;">
+    <div class="card-title">&#128200; Rekomendasi Viral</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
+      <button class="btn btn-ghost" id="btnRecFetch">&#128269; Cari Rekomendasi</button>
+      <div id="recInfo" style="font-size:12px;color:var(--muted2);"></div>
+    </div>
+    <div id="recProgWrap" style="display:none;margin-bottom:12px;">
+      <div class="prog-bar"><div class="prog-fill" id="recProgFill" style="width:0%;background:linear-gradient(90deg,var(--cyan),var(--green));"></div></div>
+      <div id="recProgMsg" style="font-size:12px;color:var(--muted2);"></div>
+    </div>
+    <div class="candidates" id="recList" style="grid-template-columns:1fr 1fr 1fr;"></div>
+  </div>
+  <div class="card" id="metaCard" style="display:none;"><div class="card-title">&#128221; Metadata <span style="color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0;">(opsional)</span></div>
+    <div class="form-group"><label>Judul YouTube</label><input type="text" id="vt" placeholder="Biarkan kosong - AI buat otomatis"></div>
+    <div class="form-group"><label>Deskripsi</label><textarea id="vd" placeholder="Deskripsi video (opsional)"></textarea></div>
+    <div class="form-group"><label>Tags (pisah koma)</label><input type="text" id="vtg" placeholder="viral, shorts, trending..."></div>
+    <div class="form-group"><label>Privasi</label>
+      <div class="priv-group">
+        <div class="priv-btn active" data-priv="public">&#127760; Public</div>
+        <div class="priv-btn" data-priv="unlisted">&#128279; Unlisted</div>
+        <div class="priv-btn" data-priv="private">&#128274; Private</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="schCard" style="display:none;"><div class="card-title">&#9200; Jadwal Upload</div>
+    <div class="sch-tabs">
+      <div class="sch-tab active" data-sch="now">&#9889; Sekarang</div>
+      <div class="sch-tab" data-sch="best">&#127942; Waktu Terbaik</div>
+      <div class="sch-tab" data-sch="custom">&#128197; Manual</div>
+    </div>
+    <div id="sp-now"><div style="color:var(--muted2);font-size:13px;">Diproses dan diupload segera setelah klik Proses.</div></div>
+    <div id="sp-best" class="hidden">
+      <div style="color:var(--muted2);font-size:13px;margin-bottom:14px;">Pilih slot waktu terbaik berdasarkan data engagement YouTube:</div>
+      <div class="best-slots" id="bestSlots"><div style="color:var(--muted2);">Memuat...</div></div>
+      <div id="selSlot" style="margin-top:12px;font-size:13px;color:var(--gold);display:none;"></div>
+    </div>
+    <div id="sp-custom" class="hidden"><div class="form-group"><label>Tanggal &amp; Waktu</label><input type="datetime-local" id="cdt"></div></div>
+  </div>
+  <button class="btn btn-red btn-full" id="btnGo" disabled>&#128640; Mulai Upload</button>
+</div>
+
+<!-- JOBS -->
+<div class="page" id="page-jobs">
+  <div class="topbar"><div><div class="page-title">Antrian <span>Upload</span></div><div class="page-sub">Klik Review untuk pilih clip mana yang diupload</div></div>
+    <button class="btn btn-ghost" id="btnRef">&#128260; Refresh</button>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="st0">0</div><div class="stat-key">Total Job</div></div>
+    <div class="stat-card"><div class="stat-val" id="st1" style="color:var(--purple)">0</div><div class="stat-key">Perlu Review</div></div>
+    <div class="stat-card"><div class="stat-val" id="st2" style="color:var(--green)">0</div><div class="stat-key">Selesai</div></div>
+    <div class="stat-card"><div class="stat-val" id="st3" style="color:var(--red)">0</div><div class="stat-key">Berjalan</div></div>
+  </div>
+  <div id="jobsList"><div style="text-align:center;padding:40px;color:var(--muted2);">Belum ada job. Upload video dulu!</div></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="topbar"><div><div class="page-title">API <span>Keys</span></div><div class="page-sub">Credentials tersimpan lokal di server Anda</div></div>
+    <div class="save-ok" id="saveOk">&#9989; Tersimpan!</div>
+  </div>
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">&#129302; Groq AI <span style="font-size:12px;color:var(--green);font-weight:400;">&#10003; Gratis selamanya</span></div>
+    <div class="api-grp"><label>GROQ_API_KEY <span class="apib apib-req">WAJIB</span></label><input type="password" id="gk" placeholder="gsk_..."><button class="eye" data-t="gk">&#128065;</button></div>
+    <div style="font-size:12px;color:var(--muted2);">Daftar gratis: <a href="https://console.groq.com" target="_blank" style="color:var(--cyan);">console.groq.com</a></div>
+  </div>
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">&#128250; YouTube Data API v3</div>
+    <div style="background:var(--panel);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--muted2);line-height:1.8;">
+      1. <a href="https://console.cloud.google.com" target="_blank" style="color:var(--cyan);">console.cloud.google.com</a> &#8594; Buat Project<br>
+      2. Aktifkan <strong style="color:var(--text);">YouTube Data API v3</strong><br>
+      3. Credentials &#8594; OAuth 2.0 &#8594; Desktop App &#8594; Download JSON
+    </div>
+    <div class="api-grp"><label>Client ID <span class="apib apib-req">WAJIB</span></label><input type="password" id="yci" placeholder="123456...apps.googleusercontent.com"><button class="eye" data-t="yci">&#128065;</button></div>
+    <div class="api-grp"><label>Client Secret <span class="apib apib-req">WAJIB</span></label><input type="password" id="ycs" placeholder="GOCSPX-..."><button class="eye" data-t="ycs">&#128065;</button></div>
+    <div class="api-grp"><label>Redirect URI <span class="apib apib-opt">OPSIONAL</span></label><input type="text" id="yru" value="http://localhost:8080"></div>
+  </div>
+  <button class="btn btn-red" id="btnSave">&#128190; Simpan</button>
+  <button class="btn btn-ghost" id="btnTest" style="margin-left:10px;">&#128299; Test Koneksi</button>
+</div>
+
+
+
+<!-- EDITOR PAGE - CapCut Style -->
+<div class="page" id="page-editor">
+  <div class="topbar"><div><div class="page-title">Video <span>Editor</span></div><div class="page-sub">Timeline editor — trim, cut, subtitle, convert dalam 1 output</div></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" id="edBtnTranscribe" style="display:none;" onclick="edStartTranscribe()">&#127908; Auto Subtitle</button>
+      <button class="btn btn-red" id="edBtnExport" style="display:none;" onclick="edExport()">&#9654; Export Video</button>
+    </div>
+  </div>
+
+  <!-- File Picker -->
+  <div class="card" id="edPickerCard">
+    <div class="card-title">&#128193; Pilih Video untuk Diedit</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <select id="edFileSelect" style="flex:1;" onchange="edSelectFile()"><option value="">-- Pilih dari file yang sudah ada --</option></select>
+      <button class="btn btn-ghost" onclick="edRefreshFiles()">&#128260;</button>
+    </div>
+    <div id="edDropzone" style="border:2px dashed var(--border2);border-radius:10px;padding:32px;text-align:center;color:var(--muted2);font-size:14px;cursor:pointer;position:relative;">
+      <input type="file" id="edFileInput" accept="video/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="edUploadFile(this)">
+      &#127916; atau drag & drop video baru ke sini
+    </div>
+  </div>
+
+  <!-- Main Editor (hidden until file selected) -->
+  <div id="edMain" style="display:none;">
+
+    <!-- Preview + Controls -->
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:16px;">
+
+      <!-- Video Preview -->
+      <div class="card" style="padding:0;overflow:hidden;background:#000;border-radius:10px;position:relative;">
+        <video id="edPreview" style="width:100%;max-height:480px;display:block;" controls>
+          Browser tidak support video preview.
+        </video>
+        <div id="edPreviewOverlay" style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;display:none;"></div>
+      </div>
+
+      <!-- Right Panel: Info + Edits -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <!-- Video Info -->
+        <div class="card" style="padding:14px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:10px;">Info Video</div>
+          <div id="edVideoInfo" style="font-size:12px;color:var(--muted2);line-height:2;"></div>
+        </div>
+
+        <!-- Format Convert -->
+        <div class="card" style="padding:14px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:10px;">Format Output</div>
+          <select id="edFormat" style="width:100%;font-size:13px;">
+            <option value="">Sama dengan asli</option>
+            <option value="vertical">Vertikal 9:16 (Shorts)</option>
+            <option value="horizontal">Horizontal 16:9 (YouTube)</option>
+          </select>
+        </div>
+
+        <!-- Add Text -->
+        <div class="card" style="padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);">Teks Overlay</div>
+            <button onclick="edAddText()" style="background:var(--red-dim);border:1px solid var(--red);color:var(--red);font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;cursor:pointer;">+ Tambah</button>
+          </div>
+          <div id="edTextList" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;"></div>
+          <div id="edTextEmpty" style="font-size:12px;color:var(--muted);text-align:center;padding:8px;">Belum ada teks</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card" style="padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;">&#9634; Timeline <span style="font-size:11px;color:var(--muted2);font-weight:400;">— klik drag untuk select, klik kanan untuk potong</span></div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="edCutAtPlayhead()" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;">&#9986; Cut di Sini</button>
+          <button onclick="edDeleteSelected()" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;color:var(--red);">&#128465; Hapus Seleksi</button>
+          <button onclick="edSelectAll()" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;">Pilih Semua</button>
+          <button onclick="edReset()" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;">&#8635; Reset</button>
+        </div>
+      </div>
+
+      <!-- Timeline ruler + strips -->
+      <div id="edTimeline" style="position:relative;user-select:none;cursor:crosshair;">
+        <!-- Ruler -->
+        <div id="edRuler" style="height:24px;background:var(--panel);border-radius:4px;margin-bottom:6px;position:relative;overflow:hidden;"></div>
+        <!-- Thumbnail strip -->
+        <div id="edThumbStrip" style="height:60px;border-radius:6px;overflow:hidden;position:relative;background:var(--border);display:flex;">
+          <div style="color:var(--muted2);font-size:12px;padding:20px;width:100%;text-align:center;">Memuat thumbnail...</div>
+        </div>
+        <!-- Cut segments overlay -->
+        <div id="edSegmentOverlay" style="position:absolute;top:24px;left:0;right:0;height:60px;pointer-events:none;"></div>
+        <!-- Playhead -->
+        <div id="edPlayhead" style="position:absolute;top:0;width:2px;background:var(--red);height:90px;pointer-events:none;z-index:10;">
+          <div style="width:10px;height:10px;background:var(--red);border-radius:50%;margin-left:-4px;margin-top:-2px;"></div>
+        </div>
+        <!-- Selection highlight -->
+        <div id="edSelection" style="position:absolute;top:24px;height:60px;background:rgba(255,77,109,0.2);border:1px solid var(--red);border-radius:3px;display:none;pointer-events:none;"></div>
+      </div>
+
+      <!-- Segments list -->
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;color:var(--muted2);margin-bottom:6px;">Segmen yang akan diambil (sisa setelah cut):</div>
+        <div id="edSegmentList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+
+      <!-- Subtitle track -->
+      <div id="edSubTrack" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);">&#128172; Subtitle Track</div>
+          <button onclick="edClearSubs()" style="background:none;border:none;color:var(--muted2);font-size:12px;cursor:pointer;">Hapus Semua</button>
+        </div>
+        <div id="edSubList" style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+
+      <!-- Music track -->
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold);">&#127925; Music Track</div>
+          <div style="display:flex;gap:6px;">
+            <label class="btn btn-ghost" style="font-size:12px;padding:5px 10px;cursor:pointer;">
+              &#11014; Upload <input type="file" id="edMusicUpload" accept="audio/*" style="display:none;" onchange="edUploadMusic(this)">
+            </label>
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:var(--purple);" onclick="edShowAIMusicGen()">&#127926; AI Generate</button>
+          </div>
+        </div>
+
+        <!-- Music file selector -->
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <select id="edMusicSelect" style="flex:1;font-size:13px;" onchange="edSelectMusic()">
+            <option value="">-- Pilih musik --</option>
+          </select>
+          <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px;" onclick="edRefreshMusic()">&#128260;</button>
+        </div>
+
+        <!-- Music info & timeline when selected -->
+        <div id="edMusicPanel" style="display:none;">
+          <audio id="edMusicPreview" controls style="width:100%;height:36px;margin-bottom:10px;"></audio>
+
+          <!-- Music timeline strip -->
+          <div style="font-size:11px;color:var(--muted2);margin-bottom:6px;">Pilih bagian musik yang dipakai (drag untuk trim):</div>
+          <div id="edMusicTimeline" style="height:48px;background:var(--panel);border-radius:6px;position:relative;cursor:crosshair;overflow:hidden;">
+            <div id="edMusicWave" style="position:absolute;inset:0;background:linear-gradient(90deg,var(--gold-dim),var(--gold-dim));opacity:0.5;"></div>
+            <div id="edMusicSelection" style="position:absolute;top:0;height:100%;background:rgba(255,209,102,0.3);border:2px solid var(--gold);border-radius:4px;"></div>
+            <div id="edMusicPlayhead" style="position:absolute;top:0;width:2px;height:100%;background:var(--gold);pointer-events:none;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-top:4px;">
+            <span id="edMusicStart">0:00</span>
+            <span id="edMusicDurLabel">0:00</span>
+          </div>
+
+          <!-- Music controls -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+            <div>
+              <label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:3px;">Volume Musik</label>
+              <input type="range" id="edMusicVol" min="0" max="1" step="0.05" value="0.3" style="width:100%;accent-color:var(--gold);" oninput="document.getElementById('edMusicVolVal').textContent=Math.round(this.value*100)+'%'">
+              <span id="edMusicVolVal" style="font-size:11px;color:var(--gold);">30%</span>
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:3px;">Fade In (detik)</label>
+              <input type="number" id="edMusicFadeIn" value="2" min="0" max="10" step="0.5" style="width:100%;font-size:13px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text);">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted2);display:block;margin-bottom:3px;">Fade Out (detik)</label>
+              <input type="number" id="edMusicFadeOut" value="2" min="0" max="10" step="0.5" style="width:100%;font-size:13px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text);">
+            </div>
+          </div>
+          <button onclick="edRemoveMusic()" style="margin-top:8px;background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;">&#10006; Hapus Musik</button>
+        </div>
+
+        <!-- AI Music Generator -->
+        <div id="edAIMusicPanel" style="display:none;margin-top:12px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:10px;">&#127926; Generate Musik dengan AI</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Deskripsi Musik</label>
+            <input type="text" id="edAIMusicPrompt" placeholder="cth: upbeat motivational background music, cinematic epic, calm lo-fi...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div class="form-group" style="margin:0;">
+              <label>Genre</label>
+              <select id="edAIMusicGenre" style="width:100%;">
+                <option value="cinematic">Cinematic</option>
+                <option value="upbeat pop">Upbeat Pop</option>
+                <option value="lo-fi">Lo-fi Chill</option>
+                <option value="epic orchestral">Epic Orchestral</option>
+                <option value="acoustic">Acoustic</option>
+                <option value="electronic">Electronic</option>
+                <option value="jazz">Jazz</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Durasi (detik)</label>
+              <input type="number" id="edAIMusicDur" value="60" min="15" max="180">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-ghost" style="font-size:13px;flex:1;color:var(--purple);border-color:var(--purple);" onclick="edGenerateAIMusic()">&#127926; Generate</button>
+            <button onclick="document.getElementById('edAIMusicPanel').style.display='none'" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:18px;">&times;</button>
+          </div>
+          <div id="edAIMusicStatus" style="display:none;margin-top:10px;">
+            <div class="prog-bar"><div class="prog-fill" id="edAIMusicProg" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--cyan));"></div></div>
+            <div id="edAIMusicMsg" style="font-size:12px;color:var(--muted2);margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transcribe status -->
+    <div id="edTranscribeStatus" style="display:none;" class="card">
+      <div class="card-title">&#127908; Auto Subtitle — Groq Whisper</div>
+      <div class="prog-bar"><div class="prog-fill" id="edTransProg" style="width:0%;background:linear-gradient(90deg,var(--cyan),var(--green));"></div></div>
+      <div id="edTransMsg" style="font-size:13px;color:var(--muted2);margin-top:8px;"></div>
+    </div>
+
+    <!-- Export status -->
+    <div id="edExportStatus" style="display:none;" class="card" style="border-color:var(--green);">
+      <div class="card-title">&#128640; Export Video</div>
+      <div class="prog-bar"><div class="prog-fill" id="edExpProg" style="width:0%;"></div></div>
+      <div id="edExpMsg" style="font-size:13px;color:var(--muted2);margin-top:8px;"></div>
+      <div id="edExpResult" style="display:none;margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI GENERATOR PAGE -->
+<div class="page" id="page-aigen">
+  <div class="topbar"><div><div class="page-title">AI Video <span>Generator</span></div><div class="page-sub">Dari ide &#8594; Storyboard &#8594; Video otomatis</div></div></div>
+
+  <!-- Step 1: Input Ide -->
+  <div id="ag-step1" class="card">
+    <div class="card-title">&#128161; Step 1 — Masukkan Ide Video</div>
+    <div class="form-group">
+      <label>Deskripsikan ide video Anda</label>
+      <textarea id="agPrompt" rows="3" placeholder="Contoh: Video motivasi tentang kerja keras dengan visual cinematic, atau tutorial cara membuat kopi yang viral di shorts..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Gambar Sumber (Animasi)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted2);white-space:nowrap;cursor:pointer;">
+          <input type="checkbox" id="agUseImage" style="accent-color:var(--purple);width:16px;height:16px;" onchange="agToggleImageSource()">
+          &#128444;&#65039; Gunakan gambar upload (Dream AI style)
+        </label>
+        <label class="btn btn-ghost" id="agImgBtn" style="font-size:12px;padding:6px 10px;display:none;">
+          &#11014; Upload gambar
+          <input type="file" id="agImgInput" accept="image/*" style="display:none;" onchange="agUploadImage(this)">
+        </label>
+        <span id="agImgStatus" style="font-size:12px;color:var(--muted2);display:none;"></span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div class="form-group" style="margin:0;flex:1;">
+        <label>Format Video</label>
+        <select id="agFmt">
+          <option value="vertical">Vertikal 9:16 (YouTube Shorts)</option>
+          <option value="horizontal">Horizontal 16:9 (YouTube biasa)</option>
+        </select>
+      </div>
+        <div style="display:flex;align-items:center;gap:10px;align-self:flex-end;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted2);white-space:nowrap;cursor:pointer;">
+              <input type="checkbox" id="agDubbing" checked style="accent-color:var(--cyan);width:16px;height:16px;">
+              &#127908; Dubbing
+            </label>
+            <select id="agDubbingLang" style="font-size:12px;padding:4px 8px;background:var(--panel);border:1px solid var(--border2);border-radius:6px;color:var(--text);">
+              <option value="id">&#127470;&#127465; Indonesia</option>
+              <option value="en">&#127482;&#127480; English</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted2);white-space:nowrap;cursor:pointer;margin-left:6px;">
+              <input type="checkbox" id="agOneImageMode" style="accent-color:var(--gold);width:16px;height:16px;">
+              &#128444;&#65039; 1 gambar cinematic
+            </label>
+          </div>
+          <button class="btn btn-red" onclick="agGenerateConcepts()">&#127775; Generate Konsep</button>
+        </div>
+      </div>
+    <div id="agConceptLoading" style="display:none;margin-top:12px;color:var(--muted2);font-size:13px;">&#8987; AI sedang membuat 5 konsep video...</div>
+  </div>
+
+  <!-- Image Provider Panel -->
+  <div class="card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div class="card-title" style="margin:0;">&#127912; Image Generation Provider</div>
+      <div id="agProviderStatus" style="font-size:12px;color:var(--muted2);">Mengecek...</div>
+    </div>
+
+    <!-- 5 provider badges -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px;">
+      <div id="provGemini" style="border:1px solid var(--border2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;margin-bottom:2px;">&#11088; Gemini</div>
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:5px;">500/hari gratis</div>
+        <div id="geminiBadge" style="font-size:10px;padding:2px 6px;border-radius:20px;display:inline-block;background:var(--border);color:var(--muted2);">Perlu key</div>
+      </div>
+      <div id="provTogether" style="border:1px solid var(--border2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Together</div>
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:5px;">FLUX.1 &bull; 3-6s</div>
+        <div id="togetherBadge" style="font-size:10px;padding:2px 6px;border-radius:20px;display:inline-block;background:var(--border);color:var(--muted2);">Perlu key</div>
+      </div>
+      <div id="provCF" style="border:1px solid var(--border2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Cloudflare</div>
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:5px;">100k/hari gratis</div>
+        <div id="cfBadge" style="font-size:10px;padding:2px 6px;border-radius:20px;display:inline-block;background:var(--border);color:var(--muted2);">Perlu key</div>
+      </div>
+      <div id="provHF" style="border:1px solid var(--border2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;margin-bottom:2px;">HuggingFace</div>
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:5px;">SDXL &bull; 5-20s</div>
+        <div id="hfBadge" style="font-size:10px;padding:2px 6px;border-radius:20px;display:inline-block;background:rgba(255,209,102,0.15);color:var(--gold);">Anonim</div>
+      </div>
+      <div style="border:1px solid var(--border2);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Pollinations</div>
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:5px;">Tanpa key</div>
+        <div style="font-size:10px;padding:2px 6px;border-radius:20px;display:inline-block;background:rgba(255,209,102,0.15);color:var(--gold);">Backup</div>
+      </div>
+    </div>
+
+    <!-- API key inputs -->
+    <div style="border-top:1px solid var(--border);padding-top:12px;">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:10px;">
+        Masukkan API key (gratis semua) — sistem otomatis pakai yang tersedia:
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+        <!-- Gemini -->
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px;">
+            &#11088; <strong>Gemini API Key</strong>
+            <span style="color:var(--green);"> — 500 gambar/hari gratis</span>
+            <a href="https://aistudio.google.com/apikey" target="_blank"
+               style="color:var(--cyan);margin-left:4px;">Daftar 30 detik &rarr;</a>
+          </label>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="geminiKeyInput" placeholder="AIza..."
+              style="flex:1;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);">
+            <button onclick="saveProviderKey('GEMINI_API_KEY','geminiKeyInput')"
+              class="btn btn-ghost" style="font-size:12px;padding:6px 10px;color:var(--green);border-color:var(--green);">Simpan</button>
+          </div>
+        </div>
+
+        <!-- Together AI -->
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px;">
+            Together AI Key
+            <span style="color:var(--gold);"> — free 3 bulan</span>
+            <a href="https://api.together.xyz" target="_blank"
+               style="color:var(--cyan);margin-left:4px;">Daftar &rarr;</a>
+          </label>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="togetherKeyInput" placeholder="sk-..."
+              style="flex:1;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);">
+            <button onclick="saveProviderKey('TOGETHER_API_KEY','togetherKeyInput')"
+              class="btn btn-ghost" style="font-size:12px;padding:6px 10px;">Simpan</button>
+          </div>
+        </div>
+
+        <!-- Cloudflare Account ID -->
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px;">
+            Cloudflare Account ID
+            <span style="color:var(--green);"> — 100k/hari gratis</span>
+            <a href="https://dash.cloudflare.com" target="_blank"
+               style="color:var(--cyan);margin-left:4px;">Daftar &rarr;</a>
+          </label>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="cfAccountInput" placeholder="abc123..."
+              style="flex:1;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);">
+            <button onclick="saveProviderKey('CF_ACCOUNT_ID','cfAccountInput')"
+              class="btn btn-ghost" style="font-size:12px;padding:6px 10px;">Simpan</button>
+          </div>
+        </div>
+
+        <!-- Cloudflare API Token -->
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px;">
+            Cloudflare API Token
+            <span style="color:var(--muted2);"> (My Profile &rarr; API Tokens &rarr; Workers AI)</span>
+          </label>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="cfTokenInput" placeholder="token..."
+              style="flex:1;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);">
+            <button onclick="saveProviderKey('CF_API_TOKEN','cfTokenInput')"
+              class="btn btn-ghost" style="font-size:12px;padding:6px 10px;">Simpan</button>
+          </div>
+        </div>
+
+        <!-- HuggingFace -->
+        <div>
+          <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:4px;">
+            HuggingFace Token
+            <span style="color:var(--gold);"> — opsional, aktifkan FLUX</span>
+            <a href="https://huggingface.co/settings/tokens" target="_blank"
+               style="color:var(--cyan);margin-left:4px;">Daftar gratis &rarr;</a>
+          </label>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="hfKeyInput" placeholder="hf_..."
+              style="flex:1;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);">
+            <button onclick="saveProviderKey('HF_API_KEY','hfKeyInput')"
+              class="btn btn-ghost" style="font-size:12px;padding:6px 10px;">Simpan</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Pilih Konsep -->
+  <!-- Step 2: Pilih Konsep -->
+  <div id="ag-step2" style="display:none;">
+    <div class="card"><div class="card-title">&#127919; Step 2 — Pilih Konsep Video</div>
+      <div id="agConcepts" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+  </div>
+
+  <!-- Step 3: Storyboard -->
+  <div id="ag-step3" style="display:none;">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">&#127916; Step 3 — Storyboard</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" onclick="agEditStoryboard()">&#9998; Edit</button>
+          <button class="btn btn-red" onclick="agRenderVideo()">&#127909; Render Video</button>
+        </div>
+      </div>
+      <div id="agStoryboard"></div>
+    </div>
+  </div>
+
+  <!-- Step 4: Render Progress -->
+  <div id="ag-step4" style="display:none;">
+    <div class="card">
+      <div class="card-title">&#128640; Step 4 — Render Video</div>
+      <div class="prog-bar" style="height:8px;margin:16px 0;"><div class="prog-fill" id="agProgFill" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--cyan));"></div></div>
+      <div id="agProgPct" style="font-size:28px;font-weight:800;color:var(--purple);">0%</div>
+      <div id="agProgMsg" style="color:var(--muted2);font-size:13px;margin-top:6px;"></div>
+      <div id="agRenderLog" style="max-height:120px;overflow-y:auto;font-family:monospace;font-size:11px;color:var(--muted2);background:var(--panel);border-radius:6px;padding:8px;margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- Step 5: Hasil -->
+  <div id="ag-step5" style="display:none;">
+    <div class="card" style="border-color:var(--green);">
+      <div class="card-title">&#9989; Video Berhasil Dibuat!</div>
+      <div id="agResult"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-red" onclick="agUploadToYT()">&#11014;&#65039; Upload ke YouTube</button>
+        <button class="btn btn-ghost" onclick="agReset()">&#8635; Buat Video Baru</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+<div id="toast"></div>
+<script>
+const API='http://localhost:5000';
+const ST={file:null,mode:'clip',priv:'public',sch:'now',slot:null,recs:[],selectedRec:null,selectedRecs:[]};
+const SELS={};
+
+// Nav
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>{
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  n.classList.add('active');
+  document.getElementById('page-'+n.dataset.page).classList.add('active');
+  if(n.dataset.page==='jobs') loadJobs();
+  if(n.dataset.page==='settings') loadSettings();
+  if(n.dataset.page==='aigen') loadProviderStatus();
+  if(n.dataset.page==='editor') { edRefreshFiles(); edRefreshMusic(); }
+}));
+
+// ── IMAGE PROVIDER ────────────────────────────────────────────────
+async function loadProviderStatus() {
+  try {
+    const s = await (await fetch(API+'/api/imgprovider/status')).json();
+    const badge = (id, active, labelOn, labelOff, provId, color='var(--green)') => {
+      const b = document.getElementById(id);
+      const p = document.getElementById(provId);
+      if (!b) return;
+      if (active) {
+        b.textContent = labelOn; b.style.background = 'var(--green-dim)';
+        b.style.color = color;
+        if (p) p.style.borderColor = color;
+      } else if (labelOff) {
+        b.textContent = labelOff;
+      }
+    };
+    badge('geminiBadge',   s.gemini,   '✅ Aktif (gratis)', null,       'provGemini');
+    badge('togetherBadge', s.together, '✅ Aktif',          null,       'provTogether');
+    badge('cfBadge',       s.cf,       '✅ Aktif (gratis)', null,       'provCF');
+    badge('hfBadge',       s.hf,       '✅ Dengan key',     '⚡ Anonim', 'provHF', 'var(--gold)');
+
+    const status = document.getElementById('agProviderStatus');
+    if (!status) return;
+    if (s.gemini) {
+      status.textContent = '⭐ Gemini aktif — 500 gambar/hari gratis';
+      status.style.color = 'var(--green)';
+    } else if (s.together) {
+      status.textContent = '🚀 Together AI aktif — FLUX.1 3-6 detik';
+      status.style.color = 'var(--green)';
+    } else if (s.cf) {
+      status.textContent = '☁️ Cloudflare aktif — 100k/hari gratis';
+      status.style.color = 'var(--green)';
+    } else if (s.hf) {
+      status.textContent = '⚡ HuggingFace aktif';
+      status.style.color = 'var(--gold)';
+    } else {
+      status.textContent = '⚠️ Belum ada key — masukkan Gemini key (paling mudah, gratis!)';
+      status.style.color = 'var(--red)';
+    }
+  } catch(e) { console.error('provider status', e); }
+}
+
+async function saveProviderKey(keyName, inputId) {
+  const val = document.getElementById(inputId).value.trim();
+  if (!val) return toast('Masukkan API key dulu!', 'e');
+  try {
+    const r = await fetch(API+'/api/settings/key', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({key: keyName, value: val})
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error('Server error ' + r.status + ': ' + txt.slice(0,80));
+    }
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById(inputId).value = '';
+      toast('✅ ' + keyName + ' tersimpan!', 's');
+      loadProviderStatus();
+    } else {
+      toast('Error: ' + (data.error || 'gagal'), 'e');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'e');
+  }
+}
+
+
+// ── AI MUSIC GENERATOR ────────────────────────────────────────────
+function edShowAIMusicGen() {
+  const panel = document.getElementById('edAIMusicPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function edGenerateAIMusic() {
+  const prompt = document.getElementById('edAIMusicPrompt').value.trim();
+  const genre  = document.getElementById('edAIMusicGenre').value;
+  const dur    = parseInt(document.getElementById('edAIMusicDur').value) || 60;
+
+  const fullPrompt = prompt
+    ? `${prompt}, ${genre} style`
+    : `${genre} background music, no vocals, professional quality`;
+
+  document.getElementById('edAIMusicStatus').style.display = 'block';
+  document.getElementById('edAIMusicProg').style.width = '20%';
+  document.getElementById('edAIMusicMsg').textContent  = 'Menghubungi Suno AI...';
+
+  try {
+    const r = await (await fetch(API+'/api/music/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({prompt: fullPrompt, duration: dur})
+    })).json();
+
+    if (r.error) throw new Error(r.error);
+
+    document.getElementById('edAIMusicProg').style.width = '60%';
+    document.getElementById('edAIMusicMsg').textContent  = 'Mendownload audio...';
+
+    // Poll status if async
+    if (r.session_id) {
+      edPollMusicGen(r.session_id);
+    } else if (r.path) {
+      edMusicGenDone(r.path, r.filename);
+    }
+  } catch(e) {
+    document.getElementById('edAIMusicMsg').textContent = 'Error: ' + e.message;
+    toast('AI Music gagal: '+e.message, 'e');
+  }
+}
+
+async function edPollMusicGen(sid) {
+  const iv = setInterval(async () => {
+    try {
+      const s = await (await fetch(API+'/api/music/gen-status/'+sid)).json();
+      document.getElementById('edAIMusicProg').style.width = s.progress+'%';
+      document.getElementById('edAIMusicMsg').textContent  = s.msg || 'Generating...';
+      if (s.status === 'done') {
+        clearInterval(iv);
+        edMusicGenDone(s.path, s.filename);
+      } else if (s.status === 'error') {
+        clearInterval(iv);
+        document.getElementById('edAIMusicMsg').textContent = 'Error: ' + s.error;
+        toast('Gagal generate musik', 'e');
+      }
+    } catch(e) { clearInterval(iv); }
+  }, 2000);
+}
+
+function edMusicGenDone(path, filename) {
+  document.getElementById('edAIMusicProg').style.width = '100%';
+  document.getElementById('edAIMusicMsg').textContent  = 'Musik siap: ' + filename;
+  document.getElementById('edAIMusicPanel').style.display = 'none';
+  toast('Musik AI berhasil dibuat!', 's');
+
+  // Reload music list and auto-select
+  edRefreshMusic().then(() => {
+    const sel = document.getElementById('edMusicSelect');
+    Array.from(sel.options).forEach(o => {
+      if (o.value === path) { sel.value = path; edSelectMusic(); }
+    });
+  });
+}
+
+
+
+// Toast
+function toast(m,t='i'){const el=document.getElementById('toast');el.textContent=m;el.className='show '+t;setTimeout(()=>el.classList.remove('show'),3000);}
+
+// File
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fi'),fn=document.getElementById('finfo');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+fi.addEventListener('change',()=>{if(fi.files[0])handleFile(fi.files[0]);});
+document.getElementById('btnYtFetch')?.addEventListener('click',handleYoutubeUrl);
+document.getElementById('btnRecFetch')?.addEventListener('click',fetchRecommendations);
+
+function resetUploadFlow(){
+  ST.recs = [];
+  ST.selectedRec = null;
+  ST.selectedRecs = [];
+  document.getElementById('btnGo').disabled = true;
+  const recCard = document.getElementById('recCard');
+  const recList = document.getElementById('recList');
+  const recInfo = document.getElementById('recInfo');
+  if (recCard) recCard.style.display = ST.file ? 'block' : 'none';
+  if (recList) recList.innerHTML = '';
+  if (recInfo) recInfo.textContent = ST.file ? 'Pilih mode lalu klik "Cari Rekomendasi"' : '';
+  document.getElementById('metaCard').style.display = 'none';
+  document.getElementById('schCard').style.display = 'none';
+  document.getElementById('ytProgWrap').style.display = 'none';
+  document.getElementById('recProgWrap').style.display = 'none';
+}
+
+function setUploadedVideo(d){
+  ST.file=d;
+  dz.classList.add('has-file');
+  fn.classList.remove('hidden');
+  fn.textContent='OK: '+d.filename+' | '+d.duration_str+' | '+d.size_mb+'MB';
+  resetUploadFlow();
+  toast('Video siap diproses!','s');
+}
+
+async function handleFile(f){
+  dz.classList.add('has-file');fn.classList.remove('hidden');fn.textContent='Mengupload '+f.name+'...';
+  document.getElementById('btnGo').disabled=true;
+  const fd=new FormData();fd.append('file',f);
+  try{
+    const d=await(await fetch(API+'/api/upload',{method:'POST',body:fd})).json();
+    if(d.error)throw new Error(d.error);
+    setUploadedVideo(d);
+  }catch(e){fn.textContent='Error: '+e.message;dz.classList.remove('has-file');ST.file=null;resetUploadFlow();toast('Upload gagal: '+e.message,'e');}
+}
+
+async function handleYoutubeUrl(){
+  const inp=document.getElementById('ytUrl');
+  const url=(inp?.value||'').trim();
+  if(!url) return toast('Masukkan URL YouTube dulu!','e');
+  dz.classList.add('has-file');
+  fn.classList.remove('hidden');
+  fn.textContent='Mengambil video dari YouTube...';
+  document.getElementById('btnGo').disabled=true;
+  document.getElementById('btnYtFetch').disabled=true;
+  const ypW = document.getElementById('ytProgWrap');
+  const ypF = document.getElementById('ytProgFill');
+  const ypM = document.getElementById('ytProgMsg');
+  ypW.style.display = 'block';
+  ypF.style.width = '8%';
+  ypM.textContent = 'Inisialisasi download URL...';
+  let yp = 8;
+  const iv = setInterval(()=>{
+    yp = Math.min(92, yp + (yp < 40 ? 8 : yp < 75 ? 4 : 2));
+    ypF.style.width = yp + '%';
+    ypM.textContent = yp < 45 ? 'Mengambil metadata video...' : 'Mendownload video...';
+  }, 600);
+  try{
+    const d=await(await fetch(API+'/api/upload-youtube',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url})
+    })).json();
+    if(d.error) throw new Error(d.error);
+    clearInterval(iv);
+    ypF.style.width = '100%';
+    ypM.textContent = 'Selesai!';
+    setUploadedVideo(d);
+  }catch(e){
+    clearInterval(iv);
+    ypF.style.width = '100%';
+    ypM.textContent = 'Gagal mengambil URL.';
+    fn.textContent='Error: '+e.message;
+    dz.classList.remove('has-file');
+    ST.file=null;
+    resetUploadFlow();
+    toast('Gagal ambil URL: '+e.message,'e');
+  }finally{
+    document.getElementById('btnYtFetch').disabled=false;
+  }
+}
+
+function pickRecommendation(idx){
+  const rec = ST.recs[idx];
+  if (!rec) return;
+  const exists = ST.selectedRecs.findIndex(x => x.__idx === idx);
+  if (exists >= 0) ST.selectedRecs.splice(exists, 1);
+  else ST.selectedRecs.push({...rec, __idx: idx});
+  document.querySelectorAll('.rec-item').forEach((el, i) => {
+    const on = ST.selectedRecs.some(x => x.__idx === i);
+    el.classList.toggle('off', !on);
+  });
+  ST.selectedRec = ST.selectedRecs.length ? ST.selectedRecs[0] : null;
+  if (!ST.selectedRec) {
+    document.getElementById('metaCard').style.display = 'none';
+    document.getElementById('schCard').style.display = 'none';
+    document.getElementById('btnGo').disabled = true;
+    return;
+  }
+  if (ST.selectedRec.title) document.getElementById('vt').value = ST.selectedRec.title;
+  if (ST.selectedRec.description) document.getElementById('vd').value = ST.selectedRec.description;
+  if (Array.isArray(ST.selectedRec.tags)) document.getElementById('vtg').value = ST.selectedRec.tags.join(', ');
+  document.getElementById('metaCard').style.display = 'block';
+  document.getElementById('schCard').style.display = 'block';
+  document.getElementById('btnGo').disabled = ST.selectedRecs.length === 0;
+}
+
+async function fetchRecommendations(){
+  if(!ST.file) return toast('Upload video atau ambil URL dulu!','e');
+  const infoEl = document.getElementById('recInfo');
+  const listEl = document.getElementById('recList');
+  const btnEl  = document.getElementById('btnRecFetch');
+  const rpW = document.getElementById('recProgWrap');
+  const rpF = document.getElementById('recProgFill');
+  const rpM = document.getElementById('recProgMsg');
+  infoEl.textContent = 'Menganalisis konten dan mengambil rekomendasi...';
+  listEl.innerHTML = '';
+  btnEl.disabled = true;
+  ST.selectedRec = null;
+  ST.selectedRecs = [];
+  document.getElementById('btnGo').disabled = true;
+  rpW.style.display = 'block';
+  rpF.style.width = '10%';
+  rpM.textContent = 'Sampling frame dan analisis viral...';
+  let rp = 10;
+  const iv = setInterval(()=>{
+    rp = Math.min(93, rp + (rp < 50 ? 7 : rp < 80 ? 4 : 2));
+    rpF.style.width = rp + '%';
+  }, 650);
+  try{
+    const d = await (await fetch(API+'/api/recommendations',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        filepath: ST.file.path,
+        mode: ST.mode,
+        source_url: ST.file.source_url || ''
+      })
+    })).json();
+    if(d.error) throw new Error(d.error);
+    clearInterval(iv);
+    rpF.style.width = '100%';
+    rpM.textContent = 'Rekomendasi siap.';
+    ST.recs = d.recommendations || [];
+    if(d.yt_meta && Object.keys(d.yt_meta).length){
+      if(!document.getElementById('vt').value) document.getElementById('vt').value = d.yt_meta.title || '';
+      if(!document.getElementById('vd').value) document.getElementById('vd').value = d.yt_meta.description || '';
+      if(!document.getElementById('vtg').value && Array.isArray(d.yt_meta.tags)) document.getElementById('vtg').value = d.yt_meta.tags.join(', ');
+      infoEl.textContent = 'Sumber YouTube terdeteksi. Skor scraping: ' + (d.yt_meta.viral_score || '-') + '/100';
+    } else {
+      infoEl.textContent = 'Pilih satu/lebih rekomendasi untuk lanjut ke metadata dan jadwal.';
+    }
+    if(!ST.recs.length){
+      listEl.innerHTML = '<div style="color:var(--muted2);">Tidak ada rekomendasi. Coba video lain.</div>';
+      return;
+    }
+    listEl.innerHTML = ST.recs.map((r,i)=>`
+      <div class="cand rec-item off" onclick="pickRecommendation(${i})" style="cursor:pointer;">
+        <div class="cand-score" style="color:${(r.viral_score||0)>=85?'var(--green)':(r.viral_score||0)>=70?'var(--gold)':'var(--muted2)'}">${r.viral_score||0}<span style="font-size:12px;color:var(--muted2)">/100</span></div>
+        <div class="cand-pred ${pclass(r.viral_prediction)}">${picon(r.viral_prediction)} ${r.viral_prediction||'SEDANG'}</div>
+        <div class="cand-ttl">${r.title||('Rekomendasi #'+(i+1))}</div>
+        <div class="cand-why" style="color:var(--gold);">${r.hook_line?('Hook: '+r.hook_line):''}</div>
+        <div class="cand-why">${r.viral_reason||''}</div>
+        <div class="cand-time">&#9201; ${Math.round(r.start||0)}s - ${Math.round(r.end||0)}s</div>
+      </div>`).join('');
+  }catch(e){
+    clearInterval(iv);
+    rpF.style.width = '100%';
+    rpM.textContent = 'Gagal mengambil rekomendasi.';
+    infoEl.textContent = 'Error: '+e.message;
+    toast('Gagal ambil rekomendasi: '+e.message,'e');
+  }finally{
+    btnEl.disabled = false;
+  }
+}
+
+// Mode
+document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.mode-btn').forEach(x=>x.classList.remove('selected'));
+  b.classList.add('selected');ST.mode=b.dataset.mode;
+  if (ST.file) resetUploadFlow();
+}));
+
+// Privacy
+document.querySelectorAll('.priv-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.priv-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');ST.priv=b.dataset.priv;
+}));
+
+// Schedule
+document.querySelectorAll('.sch-tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.sch-tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');ST.sch=t.dataset.sch;
+  ['now','best','custom'].forEach(s=>document.getElementById('sp-'+s).classList.add('hidden'));
+  document.getElementById('sp-'+ST.sch).classList.remove('hidden');
+  if(ST.sch==='best')loadBestTimes();
+}));
+async function loadBestTimes(){
+  const c=document.getElementById('bestSlots');
+  try{
+    const slots=await(await fetch(API+'/api/best-times')).json();
+    c.innerHTML=slots.map(s=>`<div class="slot-card" data-day="${s.day}" data-time="${s.time}"><div class="slot-score ${s.score>=88?'hi':''}">${s.score}</div><div><div style="font-size:14px;font-weight:700;">${s.day} ${s.time}</div><div style="font-size:11px;color:var(--muted2);">${s.reason}</div></div></div>`).join('');
+    c.querySelectorAll('.slot-card').forEach(card=>card.addEventListener('click',()=>{
+      c.querySelectorAll('.slot-card').forEach(x=>x.classList.remove('sel'));
+      card.classList.add('sel');ST.slot={day:card.dataset.day,time:card.dataset.time};
+      const ss=document.getElementById('selSlot');ss.style.display='block';ss.textContent='Dipilih: '+card.dataset.day+' pukul '+card.dataset.time;
+    }));
+  }catch(e){c.innerHTML='<div style="color:var(--muted2)">Server tidak berjalan?</div>';}
+}
+
+// Submit
+document.getElementById('btnGo').addEventListener('click',async()=>{
+  if(!ST.file)return toast('Pilih video dulu!','e');
+  if(!ST.selectedRecs.length)return toast('Pilih rekomendasi viral dulu!','e');
+  let sISO=null;
+  if(ST.sch==='custom'){const dt=document.getElementById('cdt').value;if(!dt)return toast('Pilih tanggal!','e');sISO=new Date(dt).toISOString();}
+  else if(ST.sch==='best'){
+    if(!ST.slot)return toast('Pilih slot waktu!','e');
+    const days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const td=days.indexOf(ST.slot.day),now=new Date();let diff=td-now.getDay();if(diff<=0)diff+=7;
+    const tgt=new Date(now);tgt.setDate(now.getDate()+diff);const[h,m]=ST.slot.time.split(':');tgt.setHours(+h,+m,0,0);sISO=tgt.toISOString();
+  }
+  const payload={filename:ST.file.filename,filepath:ST.file.path,mode:ST.mode,
+    title:document.getElementById('vt').value,description:document.getElementById('vd').value,
+    tags:document.getElementById('vtg').value,privacy:ST.priv,schedule:sISO,
+    schedule_type:ST.sch,best_slot:ST.slot?ST.slot.day+' '+ST.slot.time:'',
+    preselected_recommendation: ST.selectedRec,
+    preselected_recommendations: ST.selectedRecs.map(({__idx, ...x}) => x)};
+  try{
+    const d=await(await fetch(API+'/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})).json();
+    if(!d.ok)throw new Error('Gagal');
+    toast('Job dibuat! Cek Antrian.','s');
+    ST.file=null;dz.classList.remove('has-file');fn.classList.add('hidden');
+    resetUploadFlow();
+    ['vt','vd','vtg'].forEach(id=>document.getElementById(id).value='');
+    const yti=document.getElementById('ytUrl'); if(yti) yti.value='';
+    setTimeout(()=>document.querySelector('[data-page="jobs"]').click(),800);
+  }catch(e){toast('Error: '+e.message,'e');}
+});
+
+// Jobs
+function slabel(s){return{queued:'Antri',scheduled:'Terjadwal',running:'Berjalan',review:'Perlu Review',uploading:'Uploading',done:'Selesai',error:'Error'}[s]||s;}
+function semoji(s){return{queued:'&#9203;',scheduled:'&#9200;',running:'&#9881;&#65039;',review:'&#128065;',uploading:'&#11014;&#65039;',done:'&#9989;',error:'&#10060;'}[s]||'';}
+function pclass(p){if(!p)return 'p-mid';const m=p.toLowerCase();return m.includes('sangat')?'p-fire':m.includes('tinggi')?'p-high':m.includes('sedang')?'p-mid':'p-low';}
+function picon(p){if(!p)return '&#128202;';const m=p.toLowerCase();return m.includes('sangat')?'&#128293;':m.includes('tinggi')?'&#9889;':m.includes('sedang')?'&#128200;':'&#128202;';}
+
+async function loadJobs(){
+  try{
+    const jobs=await(await fetch(API+'/api/jobs')).json();
+    const rc=jobs.filter(j=>j.status==='review').length;
+    document.getElementById('st0').textContent=jobs.length;
+    document.getElementById('st1').textContent=rc;
+    document.getElementById('st2').textContent=jobs.filter(j=>j.status==='done').length;
+    document.getElementById('st3').textContent=jobs.filter(j=>j.status==='running'||j.status==='uploading').length;
+    const nb=document.getElementById('nb');
+    if(rc>0){nb.textContent=rc;nb.classList.remove('hidden');}else nb.classList.add('hidden');
+
+    const list=document.getElementById('jobsList');
+    if(!jobs.length){list.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted2);">Belum ada job.</div>';return;}
+
+    list.innerHTML=jobs.slice().reverse().map(job=>{
+      if(job.status==='review'&&!SELS[job.id])
+        SELS[job.id]=new Set((job.clip_candidates||[]).map((_,i)=>i));
+
+      const si=job.schedule_type==='best'?' | '+job.best_slot:job.schedule_type==='custom'?' | '+new Date(job.schedule).toLocaleString('id'):'';
+      const logH=job.log?.length?`<div class="job-log">${job.log.slice(-5).map(l=>`<div><span class="log-t">[${l.time}]</span>${l.msg}</div>`).join('')}</div>`:'';
+
+      let reviewH='';
+      if(job.status==='review'&&job.clip_candidates?.length){
+        const cards=job.clip_candidates.map((c,i)=>{
+          const on=SELS[job.id]?.has(i)!==false;
+          const sc=c.viral_score>=85?'var(--green)':c.viral_score>=70?'var(--gold)':'var(--muted2)';
+          return `<div class="cand ${on?'':'off'}" id="cc-${job.id}-${i}" onclick="toggleC('${job.id}',${i})">
+            <div class="cand-chk">${on?'&#9989;':'&#11036;'}</div>
+            <div class="cand-score" style="color:${sc}">${c.viral_score}<span style="font-size:12px;color:var(--muted2)">/100</span></div>
+            <div class="cand-pred ${pclass(c.viral_prediction)}">${picon(c.viral_prediction)} ${c.viral_prediction||'SEDANG'}</div>
+            <div class="cand-ttl">${c.title}</div>
+            <div class="cand-why">${c.viral_reason||''}</div>
+            <div class="cand-time">&#9201; ${c.start}s &ndash; ${c.end}s (${c.end-c.start}s)</div>
+          </div>`;
+        }).join('');
+        reviewH=`<div class="review-box">
+          <div class="review-hdr">&#127919; Pilih clip untuk diupload ke YouTube Shorts <span>Klik card untuk toggle</span></div>
+          <div class="candidates">${cards}</div>
+          <button class="upload-btn" id="ubtn-${job.id}" onclick="doUpload('${job.id}')">&#128640; Upload Clip Terpilih ke YouTube Shorts</button>
+        </div>`;
+      }
+
+      const doneH=job.clips?.length&&job.status==='done'?`<div class="done-clips">${job.clips.map(c=>`<div class="done-clip"><div style="font-size:13px;font-weight:600;">${c.title}</div>${c.url&&c.url!=='#'?`<div style="margin-top:4px;"><a href="${c.url}" target="_blank" style="color:var(--cyan);font-size:12px;">&#128279; Buka di YouTube</a></div>`:'<div style="font-size:11px;color:var(--muted2);margin-top:4px;">[Dry Run]</div>'}<div style="font-size:11px;color:var(--gold);margin-top:4px;">${c.viral_prediction||''} &middot; ${c.viral_score}/100</div></div>`).join('')}</div>`:''
+
+      return `<div class="job-item" style="${job.status==='review'?'border-color:rgba(167,139,250,0.35)':''}">
+        <div class="job-hdr">
+          <div><div class="job-name">&#127916; ${job.filename}</div><div class="job-meta">${job.mode.toUpperCase()}${si} &middot; ${new Date(job.created_at).toLocaleString('id')}</div></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="badge b-${job.status}">${semoji(job.status)} ${slabel(job.status)}</span>
+            <button onclick="delJob('${job.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted2);font-size:18px;">&times;</button>
+          </div>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${job.progress}%"></div></div>
+        ${logH}${reviewH}${doneH}
+      </div>`;
+    }).join('');
+  }catch(e){document.getElementById('jobsList').innerHTML='<div style="color:var(--red);padding:20px;text-align:center;">Server tidak berjalan. Jalankan: python app.py</div>';}
+}
+
+function toggleC(jid,idx){
+  if(!SELS[jid])SELS[jid]=new Set([0,1,2]);
+  const card=document.getElementById('cc-'+jid+'-'+idx);
+  if(SELS[jid].has(idx)){
+    SELS[jid].delete(idx);card.classList.add('off');card.querySelector('.cand-chk').innerHTML='&#11036;';
+  }else{
+    SELS[jid].add(idx);card.classList.remove('off');card.querySelector('.cand-chk').innerHTML='&#9989;';
+  }
+}
+
+async function doUpload(jid){
+  const sel=SELS[jid];const idx=sel?Array.from(sel):[0,1,2];
+  if(!idx.length)return toast('Pilih minimal 1 clip!','e');
+  const btn=document.getElementById('ubtn-'+jid);
+  if(btn){btn.disabled=true;btn.textContent='Memproses...';}
+  try{
+    const d=await(await fetch(API+'/api/jobs/'+jid+'/upload-clips',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({selected_indices:idx})})).json();
+    if(d.ok){toast('Mengupload '+idx.length+' clip...','s');setTimeout(loadJobs,1500);}
+  }catch(e){toast('Error: '+e.message,'e');}
+}
+
+async function delJob(id){await fetch(API+'/api/jobs/'+id,{method:'DELETE'});loadJobs();}
+document.getElementById('btnRef').addEventListener('click',loadJobs);
+setInterval(()=>{if(document.getElementById('page-jobs').classList.contains('active'))loadJobs();},4000);
+
+// Settings
+async function loadSettings(){
+  try{
+    const d=await(await fetch(API+'/api/settings')).json();
+    if(d.GROQ_API_KEY)document.getElementById('gk').placeholder=d.GROQ_API_KEY;
+    if(d.YOUTUBE_CLIENT_ID)document.getElementById('yci').placeholder=d.YOUTUBE_CLIENT_ID;
+  }catch(e){}
+}
+document.querySelectorAll('.eye').forEach(b=>b.addEventListener('click',()=>{
+  const inp=document.getElementById(b.dataset.t);
+  inp.type=inp.type==='password'?'text':'password';
+  b.innerHTML=inp.type==='password'?'&#128065;':'&#128584;';
+}));
+document.getElementById('btnSave').addEventListener('click',async()=>{
+  const p={};
+  const gk=document.getElementById('gk').value,yci=document.getElementById('yci').value,
+        ycs=document.getElementById('ycs').value,yru=document.getElementById('yru').value;
+  if(gk)p.GROQ_API_KEY=gk;if(yci)p.YOUTUBE_CLIENT_ID=yci;
+  if(ycs)p.YOUTUBE_CLIENT_SECRET=ycs;if(yru)p.YOUTUBE_REDIRECT_URI=yru;
+  if(!Object.keys(p).length)return toast('Isi minimal satu field!','e');
+  try{
+    const d=await(await fetch(API+'/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})).json();
+    if(d.ok){const ok=document.getElementById('saveOk');ok.style.display='flex';setTimeout(()=>ok.style.display='none',3000);toast('Tersimpan!','s');
+    document.getElementById('gk').value='';document.getElementById('yci').value='';document.getElementById('ycs').value='';}
+  }catch(e){toast('Gagal. Server tidak berjalan?','e');}
+});
+document.getElementById('btnTest').addEventListener('click',async()=>{
+  try{const d=await(await fetch(API+'/api/settings')).json();toast(d._saved?'Server OK! API Keys ditemukan.':'Server OK, API Keys belum diisi.',d._saved?'s':'i');}
+  catch(e){toast('Server tidak berjalan! python app.py','e');}
+});
+loadSettings();
+loadProviderStatus();
+
+
+
+
+
+// ── AI MUSIC GENERATOR ────────────────────────────────────────────
+function edShowAIMusicGen() {
+  const panel = document.getElementById('edAIMusicPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function edGenerateAIMusic() {
+  const prompt = document.getElementById('edAIMusicPrompt').value.trim();
+  const genre  = document.getElementById('edAIMusicGenre').value;
+  const dur    = parseInt(document.getElementById('edAIMusicDur').value) || 60;
+
+  const fullPrompt = prompt
+    ? `${prompt}, ${genre} style`
+    : `${genre} background music, no vocals, professional quality`;
+
+  document.getElementById('edAIMusicStatus').style.display = 'block';
+  document.getElementById('edAIMusicProg').style.width = '20%';
+  document.getElementById('edAIMusicMsg').textContent  = 'Menghubungi Suno AI...';
+
+  try {
+    const r = await (await fetch(API+'/api/music/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({prompt: fullPrompt, duration: dur})
+    })).json();
+
+    if (r.error) throw new Error(r.error);
+
+    document.getElementById('edAIMusicProg').style.width = '60%';
+    document.getElementById('edAIMusicMsg').textContent  = 'Mendownload audio...';
+
+    // Poll status if async
+    if (r.session_id) {
+      edPollMusicGen(r.session_id);
+    } else if (r.path) {
+      edMusicGenDone(r.path, r.filename);
+    }
+  } catch(e) {
+    document.getElementById('edAIMusicMsg').textContent = 'Error: ' + e.message;
+    toast('AI Music gagal: '+e.message, 'e');
+  }
+}
+
+async function edPollMusicGen(sid) {
+  const iv = setInterval(async () => {
+    try {
+      const s = await (await fetch(API+'/api/music/gen-status/'+sid)).json();
+      document.getElementById('edAIMusicProg').style.width = s.progress+'%';
+      document.getElementById('edAIMusicMsg').textContent  = s.msg || 'Generating...';
+      if (s.status === 'done') {
+        clearInterval(iv);
+        edMusicGenDone(s.path, s.filename);
+      } else if (s.status === 'error') {
+        clearInterval(iv);
+        document.getElementById('edAIMusicMsg').textContent = 'Error: ' + s.error;
+        toast('Gagal generate musik', 'e');
+      }
+    } catch(e) { clearInterval(iv); }
+  }, 2000);
+}
+
+function edMusicGenDone(path, filename) {
+  document.getElementById('edAIMusicProg').style.width = '100%';
+  document.getElementById('edAIMusicMsg').textContent  = 'Musik siap: ' + filename;
+  document.getElementById('edAIMusicPanel').style.display = 'none';
+  toast('Musik AI berhasil dibuat!', 's');
+
+  // Reload music list and auto-select
+  edRefreshMusic().then(() => {
+    const sel = document.getElementById('edMusicSelect');
+    Array.from(sel.options).forEach(o => {
+      if (o.value === path) { sel.value = path; edSelectMusic(); }
+    });
+  });
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// VIDEO EDITOR - CapCut Style
+// ═══════════════════════════════════════════════════════════════
+const ED = {
+  file: null, info: null,
+  segments: [],      // [{start, end}] segmen yang DIAMBIL
+  texts: [],         // [{text,start,end,position,fontsize,color}]
+  subtitles: [],     // [{text,start,end}]
+  format: null,
+  thumbs: [],
+  isDragging: false,
+  dragStartX: 0,
+  selStart: 0, selEnd: 0,
+  transcribeSession: null,
+};
+
+async function edRefreshFiles() {
+  const sel = document.getElementById('edFileSelect');
+  try {
+    const files = await (await fetch(API+'/api/editor/list')).json();
+    sel.innerHTML = '<option value="">-- Pilih file --</option>' +
+      files.map(f=>`<option value="${f.path}">[${f.folder}] ${f.name} (${f.size_mb}MB)</option>`).join('');
+  } catch(e) { toast('Gagal load file list','e'); }
+}
+
+async function edSelectFile() {
+  const path = document.getElementById('edFileSelect').value;
+  if (!path) return;
+  await edLoadFile(path);
+}
+
+async function edUploadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  toast('Mengupload...','i');
+  try {
+    const r = await (await fetch(API+'/api/upload',{method:'POST',body:fd})).json();
+    if (r.error) throw new Error(r.error);
+    toast('Upload selesai!','s');
+    await edRefreshFiles();
+    await edLoadFile(r.path);
+  } catch(e) { toast('Upload gagal: '+e.message,'e'); }
+}
+
+async function edLoadFile(path) {
+  ED.file = path;
+  ED.segments = [];
+  ED.texts    = [];
+  ED.subtitles= [];
+  ED.thumbs   = [];
+
+  // Load info
+  const info = await (await fetch(API+'/api/editor/info',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({filepath:path})})).json();
+  ED.info = info;
+  ED.segments = [{start:0, end:info.duration}]; // default: ambil semua
+
+  // Show editor
+  document.getElementById('edPickerCard').style.display='none';
+  document.getElementById('edMain').style.display='block';
+  document.getElementById('edBtnTranscribe').style.display='';
+  document.getElementById('edBtnExport').style.display='';
+
+  // Set video preview
+  const preview = document.getElementById('edPreview');
+  const fname   = path.split(/[/\\]/).pop();
+  preview.src   = API + '/videos/' + encodeURIComponent(fname);
+
+  // Update info panel
+  document.getElementById('edVideoInfo').innerHTML =
+    `Durasi: <strong style="color:var(--text)">${info.duration_str}</strong><br>
+     Resolusi: <strong style="color:var(--text)">${info.width}x${info.height}</strong><br>
+     FPS: <strong style="color:var(--text)">${info.fps}</strong><br>
+     Ukuran: <strong style="color:var(--text)">${info.size_mb}MB</strong>`;
+
+  // Load thumbnails
+  toast('Memuat timeline...','i');
+  edRenderTimeline();
+  edRenderSegments();
+
+  // Load thumbs in background
+  fetch(API+'/api/editor/thumbnails',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({filepath:path,count:24})
+  }).then(r=>r.json()).then(thumbs=>{
+    ED.thumbs = thumbs;
+    edRenderThumbStrip();
+    edRenderRuler();
+    toast('Timeline siap!','s');
+  }).catch(e=>console.error('thumb error',e));
+}
+
+function edRenderRuler() {
+  const ruler = document.getElementById('edRuler');
+  if (!ED.info) return;
+  const dur = ED.info.duration;
+  const W   = ruler.offsetWidth;
+  let marks = '';
+  const step = dur > 60 ? 10 : dur > 20 ? 5 : 2;
+  for (let t = 0; t <= dur; t += step) {
+    const x = (t / dur) * 100;
+    const m = Math.floor(t/60), s = Math.floor(t%60);
+    marks += `<div style="position:absolute;left:${x}%;transform:translateX(-50%);font-size:10px;color:var(--muted2);top:4px;">${m}:${s.toString().padStart(2,'0')}</div>
+              <div style="position:absolute;left:${x}%;width:1px;height:100%;background:var(--border);top:0;"></div>`;
+  }
+  ruler.innerHTML = marks;
+}
+
+function edRenderThumbStrip() {
+  const strip = document.getElementById('edThumbStrip');
+  if (!ED.thumbs.length) return;
+  strip.innerHTML = ED.thumbs.map(t=>`
+    <img src="data:image/jpeg;base64,${t.b64}"
+         style="height:60px;flex:1;object-fit:cover;min-width:0;"
+         title="${t.time.toFixed(1)}s">`).join('');
+}
+
+function edRenderTimeline() {
+  const tl = document.getElementById('edTimeline');
+  const strip = document.getElementById('edThumbStrip');
+
+  // Timeline click/drag for selection
+  strip.addEventListener('mousedown', edTimelineMouseDown);
+  strip.addEventListener('mousemove', edTimelineMouseMove);
+  strip.addEventListener('mouseup',   edTimelineMouseUp);
+
+  // Sync playhead with video
+  const preview = document.getElementById('edPreview');
+  preview.addEventListener('timeupdate', () => {
+    if (!ED.info) return;
+    const pct = preview.currentTime / ED.info.duration;
+    document.getElementById('edPlayhead').style.left = (pct*100)+'%';
+  });
+
+  // Click on timeline = seek video
+  strip.addEventListener('click', e => {
+    if (ED.isDragging) return;
+    const rect = strip.getBoundingClientRect();
+    const pct  = (e.clientX - rect.left) / rect.width;
+    const preview = document.getElementById('edPreview');
+    preview.currentTime = pct * ED.info.duration;
+  });
+}
+
+function edGetTimeFromX(x, rect) {
+  const pct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+  return pct * ED.info.duration;
+}
+
+function edTimelineMouseDown(e) {
+  if (!ED.info) return;
+  ED.isDragging   = true;
+  const rect      = e.currentTarget.getBoundingClientRect();
+  ED.selStart     = edGetTimeFromX(e.clientX, rect);
+  ED.selEnd       = ED.selStart;
+  ED.dragStartX   = e.clientX;
+  edUpdateSelection();
+}
+
+function edTimelineMouseMove(e) {
+  if (!ED.isDragging || !ED.info) return;
+  const rect  = e.currentTarget.getBoundingClientRect();
+  ED.selEnd   = edGetTimeFromX(e.clientX, rect);
+  edUpdateSelection();
+}
+
+function edTimelineMouseUp(e) {
+  if (!ED.isDragging) return;
+  ED.isDragging = false;
+  const s = Math.min(ED.selStart, ED.selEnd);
+  const en = Math.max(ED.selStart, ED.selEnd);
+  if (en - s > 0.1) {
+    // Show selection info
+    document.getElementById('edSelection').style.display='block';
+  }
+}
+
+function edUpdateSelection() {
+  const dur  = ED.info.duration;
+  const s    = Math.min(ED.selStart, ED.selEnd);
+  const en   = Math.max(ED.selStart, ED.selEnd);
+  const sel  = document.getElementById('edSelection');
+  sel.style.left   = (s/dur*100)+'%';
+  sel.style.width  = ((en-s)/dur*100)+'%';
+  sel.style.display= 'block';
+  sel.title = `${s.toFixed(1)}s — ${en.toFixed(1)}s (${(en-s).toFixed(1)}s)`;
+}
+
+function edCutAtPlayhead() {
+  const preview = document.getElementById('edPreview');
+  const t = preview.currentTime;
+  if (!ED.info || t <= 0 || t >= ED.info.duration) return;
+
+  // Find which segment the playhead is in and split it
+  const newSegs = [];
+  for (const seg of ED.segments) {
+    if (t > seg.start && t < seg.end) {
+      newSegs.push({start:seg.start, end:t});
+      newSegs.push({start:t, end:seg.end});
+    } else {
+      newSegs.push(seg);
+    }
+  }
+  ED.segments = newSegs;
+  edRenderSegments();
+  toast(`Cut di ${t.toFixed(2)}s`, 's');
+}
+
+function edDeleteSelected() {
+  const s  = Math.min(ED.selStart, ED.selEnd);
+  const en = Math.max(ED.selStart, ED.selEnd);
+  if (en - s < 0.1) { toast('Pilih area dulu dengan drag di timeline!','e'); return; }
+
+  // Remove the selected range from all segments
+  const newSegs = [];
+  for (const seg of ED.segments) {
+    if (seg.end <= s || seg.start >= en) {
+      newSegs.push(seg);
+    } else if (seg.start < s && seg.end > en) {
+      newSegs.push({start:seg.start, end:s});
+      newSegs.push({start:en, end:seg.end});
+    } else if (seg.start < s) {
+      newSegs.push({start:seg.start, end:s});
+    } else if (seg.end > en) {
+      newSegs.push({start:en, end:seg.end});
+    }
+    // else fully inside selection — remove it
+  }
+  ED.segments = newSegs.filter(s=>s.end-s.start > 0.05);
+  document.getElementById('edSelection').style.display='none';
+  edRenderSegments();
+  toast(`Hapus ${(en-s).toFixed(1)}s dari video`, 's');
+}
+
+function edSelectAll() {
+  ED.segments = [{start:0, end:ED.info.duration}];
+  edRenderSegments();
+  toast('Reset ke video penuh','i');
+}
+
+function edReset() {
+  ED.segments  = [{start:0, end:ED.info.duration}];
+  ED.texts     = [];
+  ED.subtitles = [];
+  document.getElementById('edTextList').innerHTML='';
+  document.getElementById('edTextEmpty').style.display='block';
+  document.getElementById('edSubTrack').style.display='none';
+  edRenderSegments();
+  toast('Reset semua edits','i');
+}
+
+function edRenderSegments() {
+  const dur     = ED.info?.duration || 1;
+  const overlay = document.getElementById('edSegmentOverlay');
+  const list    = document.getElementById('edSegmentList');
+
+  // Render overlay bars
+  const deletedRanges = edGetDeletedRanges();
+  overlay.innerHTML = deletedRanges.map(r=>`
+    <div style="position:absolute;left:${r.start/dur*100}%;width:${(r.end-r.start)/dur*100}%;height:100%;background:rgba(255,50,50,0.35);border:1px solid rgba(255,100,100,0.5);"></div>
+  `).join('') + ED.segments.map(s=>`
+    <div style="position:absolute;left:${s.start/dur*100}%;width:${(s.end-s.start)/dur*100}%;height:100%;background:rgba(6,214,160,0.15);border:1px dashed var(--green);pointer-events:none;"></div>
+  `).join('');
+
+  // Render segment list
+  const totalKept = ED.segments.reduce((a,s)=>a+(s.end-s.start),0);
+  list.innerHTML = ED.segments.length
+    ? ED.segments.map((s,i)=>`
+        <div style="background:var(--green-dim);border:1px solid var(--green);border-radius:6px;padding:5px 10px;font-size:12px;display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--green);font-weight:700;">Seg ${i+1}</span>
+          <span style="color:var(--muted2);">${s.start.toFixed(1)}s &rarr; ${s.end.toFixed(1)}s</span>
+          <span style="color:var(--muted);">(${(s.end-s.start).toFixed(1)}s)</span>
+          <button onclick="edRemoveSeg(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;margin-left:auto;">&times;</button>
+        </div>`).join('') +
+      `<div style="font-size:11px;color:var(--muted2);padding:4px 2px;">Total: ${totalKept.toFixed(1)}s dari ${dur.toFixed(1)}s asli</div>`
+    : '<div style="font-size:12px;color:var(--red);">Semua video terhapus! Klik Reset.</div>';
+}
+
+function edGetDeletedRanges() {
+  if (!ED.info) return [];
+  const dur = ED.info.duration;
+  const kept = [...ED.segments].sort((a,b)=>a.start-b.start);
+  const deleted = [];
+  let cursor = 0;
+  for (const s of kept) {
+    if (s.start > cursor + 0.01) deleted.push({start:cursor,end:s.start});
+    cursor = s.end;
+  }
+  if (cursor < dur - 0.01) deleted.push({start:cursor,end:dur});
+  return deleted;
+}
+
+function edRemoveSeg(idx) {
+  ED.segments.splice(idx,1);
+  edRenderSegments();
+}
+
+function edAddText() {
+  const preview = document.getElementById('edPreview');
+  const curT    = preview.currentTime || 0;
+  const newText = {
+    text:'Teks baru', start:curT, end:Math.min(curT+5, ED.info?.duration||10),
+    position:'bottom', fontsize:52, color:'white', id: Date.now()
+  };
+  ED.texts.push(newText);
+  edRenderTexts();
+}
+
+function edRenderTexts() {
+  const list  = document.getElementById('edTextList');
+  const empty = document.getElementById('edTextEmpty');
+  if (!ED.texts.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.innerHTML = ED.texts.map((t,i)=>`
+    <div style="background:var(--panel);border-radius:7px;padding:10px;border:1px solid var(--border2);">
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <input value="${t.text}" onchange="ED.texts[${i}].text=this.value"
+          style="flex:1;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:5px;padding:4px 8px;color:var(--text);">
+        <button onclick="edRemoveText(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">&times;</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+        <div style="font-size:10px;color:var(--muted2);">Mulai (s)<input type="number" value="${t.start}" step="0.5" onchange="ED.texts[${i}].start=+this.value"
+          style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 6px;color:var(--text);font-size:12px;margin-top:2px;"></div>
+        <div style="font-size:10px;color:var(--muted2);">Selesai (s)<input type="number" value="${t.end}" step="0.5" onchange="ED.texts[${i}].end=+this.value"
+          style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 6px;color:var(--text);font-size:12px;margin-top:2px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <div style="font-size:10px;color:var(--muted2);">Posisi
+          <select onchange="ED.texts[${i}].position=this.value" style="width:100%;font-size:11px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px;color:var(--text);margin-top:2px;">
+            <option ${t.position=='bottom'?'selected':''} value="bottom">Bawah</option>
+            <option ${t.position=='top'?'selected':''} value="top">Atas</option>
+            <option ${t.position=='center'?'selected':''} value="center">Tengah</option>
+          </select>
+        </div>
+        <div style="font-size:10px;color:var(--muted2);">Warna
+          <select onchange="ED.texts[${i}].color=this.value" style="width:100%;font-size:11px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px;color:var(--text);margin-top:2px;">
+            <option ${t.color=='white'?'selected':''} value="white">Putih</option>
+            <option ${t.color=='yellow'?'selected':''} value="yellow">Kuning</option>
+            <option ${t.color=='cyan'?'selected':''} value="cyan">Cyan</option>
+          </select>
+        </div>
+        <div style="font-size:10px;color:var(--muted2);">Ukuran
+          <input type="number" value="${t.fontsize}" min="20" max="120" onchange="ED.texts[${i}].fontsize=+this.value"
+            style="width:100%;font-size:11px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 6px;color:var(--text);margin-top:2px;">
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function edRemoveText(i) {
+  ED.texts.splice(i,1);
+  edRenderTexts();
+}
+
+async function edStartTranscribe() {
+  if (!ED.file) return toast('Pilih file dulu!','e');
+  document.getElementById('edTranscribeStatus').style.display='block';
+  document.getElementById('edTransProg').style.width='0%';
+  document.getElementById('edTransMsg').textContent='Memulai transkripsi...';
+  try {
+    const r = await (await fetch(API+'/api/editor/transcribe',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({filepath:ED.file})})).json();
+    if (r.error) throw new Error(r.error);
+    ED.transcribeSession = r.session_id;
+    edPollTranscribe();
+  } catch(e) { toast('Error: '+e.message,'e'); }
+}
+
+function edPollTranscribe() {
+  const iv = setInterval(async()=>{
+    try {
+      const s = await (await fetch(API+'/api/editor/transcribe/'+ED.transcribeSession)).json();
+      document.getElementById('edTransProg').style.width = s.progress+'%';
+      if (s.log?.length) document.getElementById('edTransMsg').textContent = s.log[s.log.length-1];
+      if (s.status==='done') {
+        clearInterval(iv);
+        ED.subtitles = s.subtitles || [];
+        edRenderSubTrack();
+        document.getElementById('edTranscribeStatus').style.display='none';
+        toast(`${ED.subtitles.length} subtitle ditemukan!`,'s');
+      } else if (s.status==='error') {
+        clearInterval(iv);
+        document.getElementById('edTransMsg').textContent='Error: '+s.log.join(' ');
+        toast('Transkripsi gagal!','e');
+      }
+    } catch(e) { clearInterval(iv); }
+  }, 1500);
+}
+
+function edRenderSubTrack() {
+  const track = document.getElementById('edSubTrack');
+  const list  = document.getElementById('edSubList');
+  track.style.display = 'block';
+  list.innerHTML = ED.subtitles.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:5px;padding:5px 8px;">
+      <span style="font-size:10px;color:var(--cyan);min-width:80px;">${s.start.toFixed(1)}s-${s.end.toFixed(1)}s</span>
+      <input value="${s.text}" onchange="ED.subtitles[${i}].text=this.value"
+        style="flex:1;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 6px;color:var(--text);">
+      <button onclick="ED.subtitles.splice(${i},1);edRenderSubTrack()" style="background:none;border:none;color:var(--muted2);cursor:pointer;">&times;</button>
+    </div>`).join('');
+}
+
+function edClearSubs() {
+  ED.subtitles=[];
+  edRenderSubTrack();
+}
+
+async function edExport() {
+  if (!ED.file) return toast('Pilih file dulu!','e');
+  if (!ED.segments.length) return toast('Tidak ada segmen yang dipilih!','e');
+
+  document.getElementById('edExportStatus').style.display='block';
+  document.getElementById('edExpProg').style.width='10%';
+  document.getElementById('edExpMsg').textContent='Memproses video...';
+  document.getElementById('edExpResult').style.display='none';
+  document.getElementById('edBtnExport').disabled=true;
+
+  const edits = {
+    cuts:      ED.segments,
+    format:    document.getElementById('edFormat').value || null,
+    texts:     ED.texts,
+    subtitles: ED.subtitles,
+    music:     edGetMusicConfig(),
+  };
+
+  try {
+    const r = await (await fetch(API+'/api/editor/apply',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({filepath:ED.file, edits, output_name:'edited_'+Date.now()})
+    })).json();
+
+    document.getElementById('edExpProg').style.width='100%';
+
+    if (r.ok) {
+      document.getElementById('edExpMsg').textContent='Selesai!';
+      document.getElementById('edExpResult').style.display='block';
+      document.getElementById('edExpResult').innerHTML=`
+        <div style="color:var(--green);font-weight:700;margin-bottom:8px;">&#9989; Video berhasil diedit!</div>
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:12px;">File: <code style="color:var(--cyan);">${r.path}</code> (${r.size_mb}MB)</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="edUploadEditedToYT('${r.path}')" class="btn btn-red" style="font-size:13px;padding:9px 16px;">&#11014;&#65039; Upload ke YouTube</button>
+          <button onclick="edLoadFile('${r.path}')" class="btn btn-ghost" style="font-size:13px;padding:9px 16px;">&#9986;&#65039; Edit Lagi</button>
+        </div>`;
+      toast('Export selesai!','s');
+      edRefreshFiles();
+    } else {
+      document.getElementById('edExpMsg').textContent='Error: '+r.error;
+      toast('Export gagal: '+r.error,'e');
+    }
+  } catch(e) {
+    toast('Error: '+e.message,'e');
+  } finally {
+    document.getElementById('edBtnExport').disabled=false;
+  }
+}
+
+async function edUploadEditedToYT(path) {
+  const fname = path.split(/[/\\]/).pop();
+  const job = {
+    filename:fname, filepath:path, mode:'film',
+    title:'', description:'', tags:'', privacy:'public',
+    schedule_type:'now', schedule:null, best_slot:''
+  };
+  try {
+    const r = await (await fetch(API+'/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(job)})).json();
+    if (r.ok) { toast('Job upload dibuat! Cek Antrian.','s'); document.querySelector('[data-page="jobs"]').click(); }
+  } catch(e) { toast('Error: '+e.message,'e'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// AI VIDEO GENERATOR
+// ═══════════════════════════════════════════════════════
+let agConcepts = [], agSelectedConcept = null, agStoryboard = null, agSessionId = null, agResult = null;
+let agImagePath = null;
+
+function agToggleImageSource() {
+  const on = document.getElementById('agUseImage')?.checked;
+  const btn = document.getElementById('agImgBtn');
+  const status = document.getElementById('agImgStatus');
+  if (btn) btn.style.display = on ? 'inline-flex' : 'none';
+  if (status) {
+    status.style.display = on ? 'inline-block' : 'none';
+    if (!on) status.textContent = '';
+  }
+  if (!on) agImagePath = null;
+}
+
+async function agUploadImage(inp) {
+  if (!inp?.files?.length) return;
+  const file = inp.files[0];
+  const status = document.getElementById('agImgStatus');
+  if (status) status.textContent = 'Uploading...';
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await (await fetch(API + '/api/aigen/upload-image', { method:'POST', body: fd })).json();
+    if (r.error) throw new Error(r.error);
+    agImagePath = r.path;
+    if (status) status.textContent = 'Gambar siap: ' + (r.filename || file.name);
+    toast('Gambar diupload!','s');
+  } catch (e) {
+    if (status) status.textContent = 'Upload gagal';
+    toast('Error: ' + e.message, 'e');
+  }
+}
+
+async function agGenerateConcepts() {
+  let prompt = document.getElementById('agPrompt').value.trim();
+  const useImage = document.getElementById('agUseImage')?.checked;
+  if (!prompt && useImage) prompt = 'Animasi dari gambar yang diupload';
+  if (!prompt) return toast('Tulis ide video dulu!','e');
+  document.getElementById('agConceptLoading').style.display='block';
+  document.getElementById('ag-step2').style.display='none';
+  try {
+    const r = await (await fetch(API+'/api/aigen/concepts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})})).json();
+    if (r.error) throw new Error(r.error);
+    agConcepts = r.concepts;
+    document.getElementById('agConceptLoading').style.display='none';
+    renderConcepts();
+    document.getElementById('ag-step2').style.display='block';
+    toast('5 konsep siap!','s');
+  } catch(e) {
+    document.getElementById('agConceptLoading').style.display='none';
+    toast('Error: '+e.message,'e');
+  }
+}
+
+function renderConcepts() {
+  const colors=['var(--red)','var(--gold)','var(--green)','var(--cyan)','var(--purple)'];
+  document.getElementById('agConcepts').innerHTML = agConcepts.map((c,i)=>`
+    <div class="cand" style="cursor:pointer;border:2px solid var(--border2);border-radius:10px;padding:16px;transition:all 0.2s;" id="concept-${i}" onclick="agSelectConcept(${i})">
+      <div style="display:flex;align-items:start;gap:14px;">
+        <div style="width:40px;height:40px;min-width:40px;border-radius:8px;background:${colors[i]}22;border:1px solid ${colors[i]};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:${colors[i]};">${i+1}</div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px;">${c.title}</div>
+          <div style="font-size:13px;color:var(--cyan);font-style:italic;margin-bottom:8px;">"${c.hook}"</div>
+          <div style="font-size:13px;color:var(--muted2);margin-bottom:8px;">${c.description}</div>
+          <div style="display:flex;gap:8px;font-size:11px;">
+            <span style="background:var(--panel);padding:2px 8px;border-radius:4px;color:var(--gold);">&#127917; ${c.style}</span>
+            <span style="background:var(--panel);padding:2px 8px;border-radius:4px;color:var(--cyan);">&#9201; ${c.duration_est}</span>
+            <span style="background:var(--panel);padding:2px 8px;border-radius:4px;color:${c.viral_potential>=85?'var(--green)':'var(--gold)'};">&#128200; ${c.viral_potential}/100</span>
+          </div>
+        </div>
+        <div style="font-size:22px;">&#9654;&#65039;</div>
+      </div>
+    </div>`).join('');
+}
+
+async function agSelectConcept(idx) {
+  agSelectedConcept = agConcepts[idx];
+  document.querySelectorAll('[id^="concept-"]').forEach((el,i)=>{
+    el.style.borderColor = i===idx ? 'var(--red)' : 'var(--border2)';
+    el.style.background  = i===idx ? 'var(--red-dim)' : '';
+  });
+  const fmt = document.getElementById('agFmt').value;
+  toast('Membuat storyboard...','i');
+  document.getElementById('ag-step3').style.display='none';
+  try {
+    const r = await (await fetch(API+'/api/aigen/storyboard',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({concept:agSelectedConcept,format:fmt})})).json();
+    if (r.error) throw new Error(r.error);
+    agStoryboard = r.storyboard;
+    renderStoryboard();
+    document.getElementById('ag-step3').style.display='block';
+    toast('Storyboard siap!','s');
+  } catch(e) { toast('Error storyboard: '+e.message,'e'); }
+}
+
+function renderStoryboard() {
+  if (!agStoryboard) return;
+  const sb = agStoryboard;
+  document.getElementById('agStoryboard').innerHTML = `
+    <div style="margin-bottom:16px;padding:12px;background:var(--panel);border-radius:8px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${sb.title}</div>
+      <div style="font-size:13px;color:var(--muted2);margin-bottom:8px;">${sb.description}</div>
+      <div style="font-size:12px;color:var(--muted);">Tags: ${(sb.tags||[]).join(', ')}</div>
+      <div style="font-size:12px;color:var(--cyan);margin-top:4px;">Format: ${sb.format} | Durasi: ~${sb.total_duration}s | ${sb.scenes?.length||0} scenes</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      ${(sb.scenes||[]).map((sc,i)=>`
+        <div style="background:var(--panel);border-radius:8px;padding:14px;border-left:3px solid var(--purple);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:700;color:var(--purple);">SCENE ${sc.id} &nbsp;&#8226;&nbsp; ${sc.duration}s</span>
+            <span style="font-size:11px;color:var(--muted2);">Transisi: ${sc.transition||'cut'}</span>
+          </div>
+          ${sc.text_overlay?`<div style="font-size:13px;color:var(--gold);margin-bottom:6px;">&#128221; "${sc.text_overlay}" (${sc.text_position})</div>`:''}
+          <div style="font-size:12px;color:var(--muted2);margin-bottom:6px;">&#128172; ${sc.narration}</div>
+          <div style="font-size:11px;color:var(--muted);background:var(--bg);padding:8px;border-radius:6px;font-family:monospace;line-height:1.5;">&#127775; ${sc.image_prompt}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function agRenderVideo() {
+  if (!agStoryboard) return toast('Generate storyboard dulu!','e');
+  document.getElementById('ag-step4').style.display='block';
+  document.getElementById('ag-step3').style.display='none';
+  document.getElementById('ag-step5').style.display='none';
+  const fmt = document.getElementById('agFmt').value;
+  const prompt = document.getElementById('agPrompt').value;
+  try {
+    const withDub  = document.getElementById('agDubbing')?.checked ?? true;
+    const dubLang  = document.getElementById('agDubbingLang')?.value || 'id';
+    const oneImage = document.getElementById('agOneImageMode')?.checked ?? false;
+    const r = await (await fetch(API+'/api/aigen/render',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt,storyboard:agStoryboard,format:fmt,with_dubbing:withDub,dub_lang:dubLang,one_image_mode:oneImage,image_path:agImagePath})})).json();
+    if (r.error) throw new Error(r.error);
+    agSessionId = r.session_id;
+    pollRenderStatus();
+  } catch(e) { toast('Error render: '+e.message,'e'); }
+}
+
+function pollRenderStatus() {
+  const iv = setInterval(async()=>{
+    try {
+      const s = await (await fetch(API+'/api/aigen/status/'+agSessionId)).json();
+      document.getElementById('agProgFill').style.width = s.progress+'%';
+      document.getElementById('agProgPct').textContent = s.progress+'%';
+      if (s.log?.length) {
+        const last = s.log[s.log.length-1];
+        document.getElementById('agProgMsg').textContent = last.msg;
+        document.getElementById('agRenderLog').innerHTML = s.log.slice(-8).map(l=>`<div>[${l.time}] ${l.msg}</div>`).join('');
+      }
+      if (s.status==='done') {
+        clearInterval(iv);
+        agResult = s.result;
+        showAgResult();
+      } else if (s.status==='error') {
+        clearInterval(iv);
+        toast('Render gagal! Lihat log.','e');
+      }
+    } catch(e) { clearInterval(iv); }
+  }, 2000);
+}
+
+function showAgResult() {
+  document.getElementById('ag-step4').style.display='none';
+  document.getElementById('ag-step5').style.display='block';
+  const r = agResult;
+  document.getElementById('agResult').innerHTML = `
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px;">${r.title}</div>
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:12px;">${r.description}</div>
+    <div style="background:var(--panel);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="color:var(--green);margin-bottom:6px;">&#9989; File video: ${r.video_path}</div>
+      <div style="color:var(--muted2);">Tags: ${(r.tags||[]).join(', ')}</div>
+      <div style="color:var(--muted2);margin-top:4px;">Scenes: ${r.storyboard?.scenes?.length||0} | Format: ${r.storyboard?.format||'vertical'}</div>
+    </div>`;
+  toast('Video berhasil dibuat!','s');
+}
+
+function agEditStoryboard() {
+  const json_str = JSON.stringify(agStoryboard, null, 2);
+  const newVal   = prompt('Edit storyboard (JSON):', json_str);
+  if (newVal) {
+    try { agStoryboard = JSON.parse(newVal); renderStoryboard(); toast('Storyboard diupdate!','s'); }
+    catch(e) { toast('JSON tidak valid!','e'); }
+  }
+}
+
+async function agUploadToYT() {
+  if (!agResult) return;
+  const job = {
+    filename: agResult.video_path.split(/[/\\]/).pop(),
+    filepath: agResult.video_path,
+    mode: 'film',
+    title: agResult.title,
+    description: agResult.description,
+    tags: (agResult.tags||[]).join(', '),
+    privacy: 'public',
+    schedule_type: 'now',
+    schedule: null,
+    best_slot: ''
+  };
+  try {
+    const r = await (await fetch(API+'/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(job)})).json();
+    if (r.ok) { toast('Job upload dibuat! Cek Antrian.','s'); document.querySelector('[data-page="jobs"]').click(); }
+  } catch(e) { toast('Error: '+e.message,'e'); }
+}
+
+function agReset() {
+  agConcepts=[]; agSelectedConcept=null; agStoryboard=null; agSessionId=null; agResult=null;
+  ['ag-step2','ag-step3','ag-step4','ag-step5'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('agPrompt').value='';
+  document.getElementById('agConceptLoading').style.display='none';
+  agImagePath = null;
+  const useImg = document.getElementById('agUseImage');
+  if (useImg) useImg.checked = false;
+  agToggleImageSource();
+  toast('Reset! Siap buat video baru.','i');
+}
+
+</script>
+</body>
+</html>

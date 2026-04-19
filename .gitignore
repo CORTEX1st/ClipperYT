@@ -1,0 +1,38 @@
+# Secrets / credentials
+.env.json
+youtube_token.pkl
+*.pem
+*.key
+
+# Runtime data
+jobs.json
+logs/
+__pycache__/
+*.pyc
+*.pyo
+
+# User/generated media
+uploads/
+output_clips/
+edited_videos/
+generated_audio/
+generated_images/
+generated_videos/
+thumbnails/
+music_library/
+
+# Local environment
+.venv/
+venv/
+env/
+.python-version
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini
+
+ffmpeg.exe
+ffprobe.exe
