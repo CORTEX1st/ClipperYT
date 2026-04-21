@@ -404,6 +404,30 @@ class ClipExtractor:
         finally:
             Path(srt_path).unlink(missing_ok=True)
 
+    def _add_source_watermark(self, src_clip: str, dst_clip: str, source_channel: str = "") -> str:
+        label = (source_channel or "").strip()
+        if not label:
+            return src_clip
+        txt = f"SC/Source video: {label}"
+        txt = self._escape_drawtext(txt[:110])
+        vf = (
+            "drawtext="
+            f"text='{txt}':"
+            "x=w-tw-26:y=h-th-26:"
+            "font=Arial:fontcolor=white:fontsize=24:"
+            "box=1:boxcolor=black@0.45:boxborderw=10:"
+            "shadowcolor=black@0.55:shadowx=1:shadowy=1"
+        )
+        r = run_ffmpeg([
+            "-i", src_clip, "-vf", vf,
+            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+            "-c:a", "copy", "-movflags", "+faststart", "-y", dst_clip
+        ], capture_output=True, text=True)
+        if r.returncode == 0 and Path(dst_clip).exists() and Path(dst_clip).stat().st_size > 1000:
+            return dst_clip
+        logger.warning(f"  Watermark source gagal, lanjut tanpa watermark: {r.stderr[-160:] if r.stderr else ''}")
+        return src_clip
+
     def _detect_sound_segments(self, video_path: str, start: float, duration: float) -> list:
         """
         Detect non-silent segments using ffmpeg silencedetect.
@@ -609,9 +633,11 @@ Balas HANYA JSON array (tanpa teks lain):
         ]
 
     def _cut_and_convert(self, video_path: str, start: float, end: float,
-                          output_name: str, hook_line: str = "", intro_text: str = "") -> str:
+                          output_name: str, hook_line: str = "", intro_text: str = "",
+                          source_channel: str = "") -> str:
         output_path = str(self.output_dir / f"{output_name}.mp4")
         raw_path    = str(self.output_dir / f"{output_name}_raw.mp4")
+        wm_path     = str(self.output_dir / f"{output_name}_wm.mp4")
         duration    = end - start
         # Audio-follow moving camera for clip mode
         try:
@@ -636,12 +662,13 @@ Balas HANYA JSON array (tanpa teks lain):
             return None
         final_path = self._burn_word_captions(raw_path, output_path)
         final_path = self._prepend_freeze_intro(final_path, intro_text or hook_line or "Highlight Video")
+        final_path = self._add_source_watermark(final_path, wm_path, source_channel=source_channel)
         Path(raw_path).unlink(missing_ok=True)
         size = Path(final_path).stat().st_size/1024/1024
         logger.info(f"  Clip: {final_path} ({size:.1f}MB)")
         return final_path
 
-    def extract_viral_clips(self, video_path: str) -> list:
+    def extract_viral_clips(self, video_path: str, source_channel: str = "") -> list:
         moments  = self._detect_viral_moments(video_path)
         base     = Path(video_path).stem
         clips    = []
@@ -650,7 +677,8 @@ Balas HANYA JSON array (tanpa teks lain):
             path = self._cut_and_convert(
                 video_path, m["start"], m["end"], f"clip_{i:02d}",
                 hook_line=m.get("hook_line",""),
-                intro_text=m.get("title","")
+                intro_text=m.get("title",""),
+                source_channel=source_channel
             )
             if path:
                 clips.append({
@@ -669,10 +697,10 @@ Balas HANYA JSON array (tanpa teks lain):
 
     def create_clip_from_range(self, video_path: str, start: float, end: float,
                                output_name: str = "clip_manual", hook_line: str = "",
-                               intro_text: str = "") -> dict:
+                               intro_text: str = "", source_channel: str = "") -> dict:
         path = self._cut_and_convert(
             video_path, float(start), float(end), output_name,
-            hook_line=hook_line, intro_text=intro_text
+            hook_line=hook_line, intro_text=intro_text, source_channel=source_channel
         )
         if not path:
             return {}

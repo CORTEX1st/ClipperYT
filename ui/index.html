@@ -1076,6 +1076,8 @@ document.getElementById('btnGo').addEventListener('click',async()=>{
   const payload={filename:ST.file.filename,filepath:ST.file.path,mode:ST.mode,
     title:document.getElementById('vt').value,description:document.getElementById('vd').value,
     tags:document.getElementById('vtg').value,privacy:ST.priv,schedule:sISO,
+    source_channel: (ST.file?.yt_meta?.uploader || '').trim(),
+    source_url: (ST.file?.source_url || '').trim(),
     schedule_type:ST.sch,best_slot:ST.slot?ST.slot.day+' '+ST.slot.time:'',
     preselected_recommendation: ST.selectedRec,
     preselected_recommendations: ST.selectedRecs.map(({__idx, ...x}) => x)};

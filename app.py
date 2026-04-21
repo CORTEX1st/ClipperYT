@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os, json, threading, uuid, time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import subprocess
 from urllib.parse import urlparse
 
@@ -84,6 +84,21 @@ def is_valid_youtube_url(url: str) -> bool:
     except Exception:
         return False
 
+def detect_channel_from_youtube_url(url: str) -> str:
+    if not url or not is_valid_youtube_url(url):
+        return ""
+    try:
+        proc_meta = subprocess.run(
+            ["python", "-m", "yt_dlp", "--skip-download", "--dump-single-json", url],
+            capture_output=True, text=True, cwd=str(BASE_DIR)
+        )
+        if proc_meta.returncode == 0 and proc_meta.stdout.strip():
+            raw = json.loads(proc_meta.stdout)
+            return (raw.get("uploader") or raw.get("channel") or "").strip()
+    except Exception:
+        return ""
+    return ""
+
 def score_from_youtube_meta(meta: dict) -> int:
     views = float(meta.get("view_count") or 0)
     likes = float(meta.get("like_count") or 0)
@@ -133,7 +148,14 @@ def fallback_recommendations(video_path: str, mode: str = "clip") -> list:
          "viral_score":64, "viral_reason":"Momentum akhir", "viral_prediction":"SEDANG"},
     ]
 
-def build_shorts_seo_metadata(base_title: str, base_desc: str, base_tags, hook_line: str = "", viral_reason: str = ""):
+def build_shorts_seo_metadata(
+    base_title: str,
+    base_desc: str,
+    base_tags,
+    hook_line: str = "",
+    viral_reason: str = "",
+    source_channel: str = "",
+):
     import re
     title = (base_title or "Shorts Viral").strip()
     desc = (base_desc or "").strip()
@@ -169,10 +191,41 @@ def build_shorts_seo_metadata(base_title: str, base_desc: str, base_tags, hook_l
     elif viral_reason:
         lines.append(f"Inti momen: {viral_reason[:180]}")
     lines.append("Follow untuk momen viral berikutnya.")
+    source_channel = (source_channel or "").strip()
+    if source_channel and source_channel.lower() not in desc.lower():
+        lines.append(f"SC/Source video: {source_channel[:80]}")
     hashtags = " ".join([f"#{t}" for t in clean_tags[:5]])
     lines.append(hashtags)
     final_desc = "\n\n".join([ln for ln in lines if ln]).strip()[:5000]
     return title, final_desc, clean_tags
+
+def parse_schedule_to_utc(schedule_raw: str):
+    txt = str(schedule_raw or "").strip()
+    if not txt:
+        return None
+    if txt.endswith("Z"):
+        txt = txt[:-1] + "+00:00"
+    dt = datetime.fromisoformat(txt)
+    if dt.tzinfo is None:
+        # If frontend sends naive datetime, treat it as local server timezone.
+        local_tz = datetime.now().astimezone().tzinfo
+        dt = dt.replace(tzinfo=local_tz)
+    return dt.astimezone(timezone.utc)
+
+def schedule_publish_at(job: dict, index: int = 0):
+    schedule_type = job.get("schedule_type", "now")
+    schedule_raw = job.get("schedule")
+    if schedule_type not in ["best", "custom"] or not schedule_raw:
+        return None
+    dt_utc = parse_schedule_to_utc(schedule_raw)
+    if not dt_utc:
+        return None
+    # Stagger multi-clips to avoid identical publish timestamps.
+    dt_utc = dt_utc + timedelta(minutes=30 * max(0, int(index)))
+    now_utc = datetime.now(timezone.utc)
+    if dt_utc <= now_utc + timedelta(minutes=1):
+        raise ValueError("Jadwal upload harus lebih dari 1 menit dari waktu sekarang.")
+    return dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 # ── Static ───────────────────────────────────────────────────────
 @app.route("/")
@@ -351,6 +404,8 @@ def create_job():
         "id": job_id, "filename": data["filename"], "filepath": data["filepath"],
         "mode": data["mode"], "title": data.get("title",""), "description": data.get("description",""),
         "tags": data.get("tags",""), "privacy": data.get("privacy","public"),
+        "source_channel": data.get("source_channel",""),
+        "source_url": data.get("source_url",""),
         "schedule": data.get("schedule"), "schedule_type": data.get("schedule_type","now"),
         "best_slot": data.get("best_slot",""), "status": "queued", "progress": 0,
         "log": [], "created_at": datetime.now().isoformat(), "clips": [],
@@ -637,16 +692,12 @@ def run_job(job_id):
         import traceback
         schedule_type = job.get("schedule_type","now")
         if schedule_type in ["best","custom"] and job.get("schedule"):
-            target = datetime.fromisoformat(job["schedule"])
-            wait   = (target - datetime.now()).total_seconds()
-            if wait > 0:
+            try:
+                pub0 = schedule_publish_at(job, 0)
                 update_job(job_id, status="scheduled")
-                log_job(job_id, f"Dijadwalkan: {target.strftime('%d/%m/%Y %H:%M')}", 0)
-                while wait > 0:
-                    time.sleep(min(60, wait))
-                    wait = (target - datetime.now()).total_seconds()
-                    if wait > 0:
-                        log_job(job_id, f"Menunggu... {int(wait//60)} menit lagi")
+                log_job(job_id, f"Mode schedule YouTube aktif. Publish awal: {pub0} (UTC)", 3)
+            except Exception as se:
+                raise RuntimeError(f"Jadwal tidak valid: {se}") from se
         update_job(job_id, status="running", progress=5)
         log_job(job_id, "AI Agent dimulai...", 5)
         import sys; sys.path.insert(0, str(BASE_DIR))
@@ -666,15 +717,24 @@ def run_job(job_id):
             log_job(job_id, f"Mode manual: {category.upper()}", 25)
         title       = job["title"]       or result.get("title", Path(video_path).stem)
         description = job["description"] or result.get("description","")
+        source_channel = (job.get("source_channel") or "").strip()
+        if not source_channel:
+            source_channel = detect_channel_from_youtube_url(job.get("source_url",""))
         tags_raw    = job["tags"]
         tags        = [t.strip() for t in tags_raw.split(",")] if tags_raw else result.get("tags",[])
+        if source_channel and f"SC/Source video: {source_channel}" not in description:
+            description = (description + "\n\n" if description else "") + f"SC/Source video: {source_channel}"
         has_yt   = bool(env.get("YOUTUBE_CLIENT_ID") and env.get("YOUTUBE_CLIENT_SECRET"))
         uploader = YouTubeUploader(dry_run=not has_yt)
         if category == "film":
             log_job(job_id, "Upload film ke YouTube...", 40)
+            publish_at = schedule_publish_at(job, 0)
             res = uploader.upload(video_path=video_path,title=title,description=description,
-                                  tags=tags,category_id="1",privacy=job.get("privacy","public"))
+                                  tags=tags,category_id="1",privacy=job.get("privacy","public"),
+                                  publish_at=publish_at)
             url = res.get("url","#")
+            if publish_at:
+                log_job(job_id, f"Video dijadwalkan di YouTube: {publish_at} (UTC)")
             log_job(job_id, f"Upload selesai! {url}", 100)
             update_job(job_id, status="done", progress=100, youtube_url=url)
         else:
@@ -695,7 +755,8 @@ def run_job(job_id):
                         float(item.get("end",0)),
                         f"selected_{job_id}_{i:02d}",
                         hook_line=item.get("hook_line",""),
-                        intro_text=item.get("title","")
+                        intro_text=item.get("title",""),
+                        source_channel=source_channel
                     )
                     if not clip:
                         msg = f"Gagal membuat clip terpilih #{i}"
@@ -708,7 +769,8 @@ def run_job(job_id):
                     ctitle, cdesc, ctags = build_shorts_seo_metadata(
                         ctitle, cdesc, ctags,
                         hook_line=item.get("hook_line",""),
-                        viral_reason=item.get("viral_reason","")
+                        viral_reason=item.get("viral_reason",""),
+                        source_channel=source_channel
                     )
                     pct = 55 + int((i / max(1, len(pres))) * 40)
                     log_job(job_id, f"Upload clip terpilih {i}/{len(pres)}...", pct)
@@ -721,6 +783,7 @@ def run_job(job_id):
                         "start": item.get("start",0), "end": item.get("end",0), "selected": True
                     })
                     try:
+                        publish_at = schedule_publish_at(job, i - 1)
                         res = uploader.upload(
                             video_path=clip["path"],
                             title=ctitle,
@@ -728,8 +791,11 @@ def run_job(job_id):
                             tags=ctags,
                             category_id="24",
                             privacy=job.get("privacy","public"),
-                            shorts=True
+                            shorts=True,
+                            publish_at=publish_at
                         )
+                        if publish_at:
+                            log_job(job_id, f"Clip {i} dijadwalkan: {publish_at} (UTC)")
                         clip_results.append({
                             "title": ctitle,
                             "url": res.get("url","#"),
@@ -759,7 +825,8 @@ def run_job(job_id):
                 clip = extractor.create_clip_from_range(
                     video_path, float(pre.get("start",0)), float(pre.get("end",0)),
                     f"selected_{job_id}", hook_line=pre.get("hook_line",""),
-                    intro_text=pre.get("title","")
+                    intro_text=pre.get("title",""),
+                    source_channel=source_channel
                 )
                 if not clip:
                     raise RuntimeError("Gagal membuat clip dari rekomendasi terpilih")
@@ -769,10 +836,12 @@ def run_job(job_id):
                 ctitle, cdesc, ctags = build_shorts_seo_metadata(
                     ctitle, cdesc, ctags,
                     hook_line=pre.get("hook_line",""),
-                    viral_reason=pre.get("viral_reason","")
+                    viral_reason=pre.get("viral_reason",""),
+                    source_channel=source_channel
                 )
                 log_job(job_id, "Upload clip terpilih ke YouTube...", 70)
                 try:
+                    publish_at = schedule_publish_at(job, 0)
                     res = uploader.upload(
                         video_path=clip["path"],
                         title=ctitle,
@@ -780,9 +849,12 @@ def run_job(job_id):
                         tags=ctags,
                         category_id="24",
                         privacy=job.get("privacy","public"),
-                        shorts=True
+                        shorts=True,
+                        publish_at=publish_at
                     )
                     curl = res.get("url","#")
+                    if publish_at:
+                        log_job(job_id, f"Clip dijadwalkan: {publish_at} (UTC)")
                     update_job(job_id, clips=[{
                         "title": ctitle, "url": curl,
                         "viral_score": pre.get("viral_score", 0),
@@ -807,14 +879,15 @@ def run_job(job_id):
                     log_job(job_id, "Dialihkan ke review agar bisa retry upload manual.", 80)
             else:
                 log_job(job_id, "Mencari momen viral...", 40)
-                clips     = extractor.extract_viral_clips(video_path)
+                clips     = extractor.extract_viral_clips(video_path, source_channel=source_channel)
                 log_job(job_id, f"{len(clips)} clip siap untuk direview!", 80)
                 candidates = []
                 for c in clips:
                     ctitle, cdesc, ctags = build_shorts_seo_metadata(
                         c.get("title",""), c.get("description",""), c.get("tags",[]),
                         hook_line=c.get("hook_line",""),
-                        viral_reason=c.get("viral_reason","")
+                        viral_reason=c.get("viral_reason",""),
+                        source_channel=source_channel
                     )
                     candidates.append({"path":c["path"],"title":ctitle,"description":cdesc,
                                "tags":ctags,"viral_score":c["viral_score"],
@@ -839,6 +912,9 @@ def upload_clips_job(job_id, selected_indices):
     candidates = job.get("clip_candidates",[])
     has_yt     = bool(env.get("YOUTUBE_CLIENT_ID") and env.get("YOUTUBE_CLIENT_SECRET"))
     uploader   = YouTubeUploader(dry_run=not has_yt)
+    source_channel = (job.get("source_channel") or "").strip()
+    if not source_channel:
+        source_channel = detect_channel_from_youtube_url(job.get("source_url",""))
     update_job(job_id, status="uploading", progress=85)
     clip_results = []
     for i, idx in enumerate(selected_indices):
@@ -847,12 +923,19 @@ def upload_clips_job(job_id, selected_indices):
         pct  = 85 + int((i+1)/len(selected_indices)*14)
         log_job(job_id, f"Mengupload clip {i+1}/{len(selected_indices)}: {clip['title']}", pct)
         try:
+            publish_at = schedule_publish_at(job, i)
+            desc = clip["description"]
+            if source_channel and source_channel.lower() not in (desc or "").lower():
+                desc = (desc + "\n\n" if desc else "") + f"SC/Source video: {source_channel}"
             res = uploader.upload(video_path=clip["path"],title=clip["title"],
-                                  description=clip["description"],tags=clip["tags"],
-                                  category_id="24",privacy=job.get("privacy","public"),shorts=True)
+                                  description=desc,tags=clip["tags"],
+                                  category_id="24",privacy=job.get("privacy","public"),shorts=True,
+                                  publish_at=publish_at)
             clip_results.append({"title":clip["title"],"url":res.get("url","#"),
                                   "viral_score":clip["viral_score"],
                                   "viral_prediction":clip.get("viral_prediction","")})
+            if publish_at:
+                log_job(job_id, f"Clip {i+1} dijadwalkan: {publish_at} (UTC)")
             log_job(job_id, f"Upload selesai: {res.get('url','#')}")
         except Exception as e:
             log_job(job_id, f"Gagal upload clip: {e}")

@@ -6,6 +6,7 @@ import os
 import pickle
 import json
 from pathlib import Path
+from datetime import datetime, timezone
 
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
@@ -224,6 +225,7 @@ class YouTubeUploader:
         category_id: str = "24",
         privacy: str = "public",
         shorts: bool = False,
+        publish_at: str | None = None,
     ) -> dict:
         if self.dry_run:
             logger.info(f"  [DRY-RUN] Upload: {title} | {video_path}")
@@ -241,6 +243,19 @@ class YouTubeUploader:
         if shorts and "shorts" not in [t.lower() for t in tags]:
             tags = ["shorts"] + tags
 
+        scheduled_for = None
+        if publish_at:
+            ptxt = str(publish_at).strip()
+            try:
+                if ptxt.endswith("Z"):
+                    ptxt = ptxt[:-1] + "+00:00"
+                parsed = datetime.fromisoformat(ptxt)
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                scheduled_for = parsed.astimezone(timezone.utc)
+            except Exception as e:
+                raise ValueError(f"publish_at tidak valid: {publish_at}") from e
+
         body = {
             "snippet": {
                 "title": title[:100],
@@ -253,6 +268,10 @@ class YouTubeUploader:
                 "selfDeclaredMadeForKids": False,
             },
         }
+        if scheduled_for:
+            # YouTube schedule requires private visibility + RFC3339 UTC publishAt.
+            body["status"]["privacyStatus"] = "private"
+            body["status"]["publishAt"] = scheduled_for.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         def _send_once():
             youtube = self._get_authenticated_service()
@@ -288,6 +307,8 @@ class YouTubeUploader:
         video_id = response["id"]
         url = f"https://youtu.be/{video_id}"
         logger.info(f"  Upload berhasil! {url}")
+        if scheduled_for:
+            logger.info(f"  Dijadwalkan tayang di YouTube: {body['status']['publishAt']} (UTC)")
 
         # Auto thumbnail: frame + title text
         try:
@@ -300,4 +321,7 @@ class YouTubeUploader:
         except Exception as e:
             logger.warning(f"  Set thumbnail gagal (skip): {e}")
 
-        return {"id": video_id, "url": url, "title": title}
+        result = {"id": video_id, "url": url, "title": title}
+        if scheduled_for:
+            result["publish_at"] = body["status"]["publishAt"]
+        return result
